@@ -71,6 +71,19 @@ export function createTaskFromInput(input: DraftTaskInput, requesterId: string, 
   };
 }
 
+export function updateTaskFromInput(existing: Task, input: DraftTaskInput, publish: boolean): Task {
+  const next = createTaskFromInput(input, existing.requesterId, publish);
+  return {
+    ...next,
+    id: existing.id,
+    createdAt: existing.createdAt,
+    quotes: publish ? next.quotes : existing.quotes,
+    packages: publish ? next.packages : existing.packages,
+    reviewBatches: publish ? next.reviewBatches : existing.reviewBatches,
+    updatedAt: nowIso()
+  };
+}
+
 export function selectQuote(task: Task, quoteId: string): Task {
   const quote = task.quotes.find((item) => item.id === quoteId);
   if (!quote) return task;

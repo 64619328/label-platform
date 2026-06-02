@@ -5,8 +5,9 @@ import { useEffect, useMemo, useState } from "react";
 import { AppHeader } from "@/components/AppHeader";
 import { defaultLabelConfigs } from "@/lib/demo-data";
 import { getCurrentUser, getTasks, getUsers, saveTasks } from "@/lib/storage";
-import { createTaskFromInput } from "@/lib/task-actions";
+import { createTaskFromInput, updateTaskFromInput } from "@/lib/task-actions";
 import type { DisplayConfig, DraftTaskInput, LabelConfig, Task, TaskCreationMode, TaskEntryMode, TrialSamplingMode } from "@/lib/types";
+import { uid } from "@/lib/utils";
 
 const defaultImages = `https://picsum.photos/id/1011/640/420
 https://picsum.photos/id/1015/640/420, https://picsum.photos/id/1025/640/420
@@ -14,6 +15,7 @@ https://picsum.photos/id/1035/640/420
 https://picsum.photos/id/1041/640/420`;
 
 export default function NewTaskPage() {
+  const [editId, setEditId] = useState<string | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [message, setMessage] = useState("");
   const [creationMode, setCreationMode] = useState<TaskCreationMode>("from_scratch");
@@ -38,7 +40,28 @@ export default function NewTaskPage() {
   const [labelConfigs, setLabelConfigs] = useState<LabelConfig[]>(defaultLabelConfigs);
 
   useEffect(() => {
-    setTasks(getTasks());
+    const id = new URLSearchParams(window.location.search).get("edit");
+    setEditId(id);
+    const loaded = getTasks();
+    setTasks(loaded);
+    const editing = loaded.find((task) => task.id === id);
+    if (editing) {
+      setCreationMode(editing.creationMode);
+      setHistoryTaskId(editing.historyTaskId ?? "");
+      setEntryMode(editing.entryMode);
+      setTitle(editing.title);
+      setDescription(editing.description);
+      setTrainingContent(editing.trainingContent);
+      setRules(editing.rules);
+      setDeadline(editing.deadline);
+      setAssignedAnnotatorId(editing.assignedAnnotatorId ?? "");
+      setManualUnitPrice(editing.manualUnitPrice ?? editing.quotedUnitPrice ?? 1.2);
+      setImageRows([...editing.trialItems, ...editing.formalItems].map((item) => item.imageUrls.join(", ")).join("\n") || defaultImages);
+      setTrialSamplingMode(editing.trialSamplingMode ?? "first_n");
+      setTrialSampleSize(editing.trialSampleSize ?? Math.max(1, editing.trialItems.length));
+      setDisplayConfig(editing.displayConfig);
+      setLabelConfigs(editing.labelConfigs);
+    }
   }, []);
 
   const users = getUsers();
@@ -61,6 +84,58 @@ export default function NewTaskPage() {
 
   function updateLabelTitle(index: number, titleValue: string) {
     setLabelConfigs((current) => current.map((config, i) => (i === index ? { ...config, title: titleValue } : config)));
+  }
+
+  function updateLabelMode(index: number, mode: LabelConfig["selectionMode"]) {
+    setLabelConfigs((current) => current.map((config, i) => (i === index ? { ...config, selectionMode: mode } : config)));
+  }
+
+  function updateOption(configIndex: number, optionIndex: number, field: "label" | "criteria", value: string) {
+    setLabelConfigs((current) =>
+      current.map((config, i) =>
+        i === configIndex
+          ? {
+              ...config,
+              options: config.options.map((option, j) => (j === optionIndex ? { ...option, [field]: value } : option))
+            }
+          : config
+      )
+    );
+  }
+
+  function addLabelGroup() {
+    setLabelConfigs((current) => [
+      ...current,
+      {
+        id: uid("label"),
+        title: "新问题组",
+        selectionMode: "single",
+        options: [{ id: uid("option"), label: "选项 A", criteria: "填写该选项的判断依据。" }]
+      }
+    ]);
+  }
+
+  function addOption(configIndex: number) {
+    setLabelConfigs((current) =>
+      current.map((config, i) =>
+        i === configIndex
+          ? {
+              ...config,
+              options: [...config.options, { id: uid("option"), label: `选项 ${config.options.length + 1}`, criteria: "填写该选项的判断依据。" }]
+            }
+          : config
+      )
+    );
+  }
+
+  function removeOption(configIndex: number, optionIndex: number) {
+    setLabelConfigs((current) =>
+      current.map((config, i) =>
+        i === configIndex
+          ? { ...config, options: config.options.filter((_, j) => j !== optionIndex) }
+          : config
+      )
+    );
   }
 
   function buildInput(): DraftTaskInput {
@@ -91,6 +166,7 @@ export default function NewTaskPage() {
     if (publish && entryMode === "direct_formal" && creationMode === "from_scratch" && manualUnitPrice <= 0) return "请填写手动单价";
     if (publish && entryMode === "trial_quote" && trialSampleSize <= 0) return "请填写试标数据条数";
     if (labelConfigs.some((config) => !config.title.trim() || config.options.length === 0)) return "每个问题组需要标题和选项";
+    if (labelConfigs.some((config) => config.options.some((option) => !option.label.trim() || !option.criteria.trim()))) return "每个标签选项需要名称和判断依据";
     return "";
   }
 
@@ -101,8 +177,10 @@ export default function NewTaskPage() {
       return;
     }
     const currentUser = getCurrentUser();
-    const nextTask = createTaskFromInput(buildInput(), currentUser.id, publish);
-    saveTasks([...tasks, nextTask]);
+    const existing = tasks.find((task) => task.id === editId);
+    const nextTask = existing ? updateTaskFromInput(existing, buildInput(), publish) : createTaskFromInput(buildInput(), currentUser.id, publish);
+    const nextTasks = existing ? tasks.map((task) => (task.id === existing.id ? nextTask : task)) : [...tasks, nextTask];
+    saveTasks(nextTasks);
     setMessage(publish ? "任务已发布" : "草稿已保存");
     window.location.href = "/requester/dashboard";
   }
@@ -113,7 +191,7 @@ export default function NewTaskPage() {
       <div className="page grid">
         <div className="row between">
           <div>
-            <h1>发布图像标注任务</h1>
+            <h1>{editId ? "编辑任务草稿" : "发布图像标注任务"}</h1>
             <p className="muted">支持草稿、试标报价、直接正式标注、历史任务继承。</p>
           </div>
           <Link href="/requester/dashboard">
@@ -265,16 +343,43 @@ export default function NewTaskPage() {
             <h2>标签配置</h2>
             <p className="muted">MVP 提供 AI 审核能力说明，不实现真实后台审核。</p>
             {labelConfigs.map((config, index) => (
-              <div className="item" key={config.id}>
-                <div className="field">
-                  <label>问题组标题</label>
-                  <input value={config.title} onChange={(event) => updateLabelTitle(index, event.target.value)} />
+              <div className="item grid" key={config.id}>
+                <div className="grid two">
+                  <div className="field">
+                    <label>问题组标题</label>
+                    <input value={config.title} onChange={(event) => updateLabelTitle(index, event.target.value)} />
+                  </div>
+                  <div className="field">
+                    <label>选择方式</label>
+                    <select value={config.selectionMode} onChange={(event) => updateLabelMode(index, event.target.value as LabelConfig["selectionMode"])}>
+                      <option value="single">单选</option>
+                      <option value="multiple">多选</option>
+                    </select>
+                  </div>
                 </div>
-                <div className="muted" style={{ marginTop: 8 }}>
-                  {config.selectionMode === "single" ? "单选" : "多选"} · {config.options.map((option) => option.label).join(" / ")}
+                <div className="grid">
+                  {config.options.map((option, optionIndex) => (
+                    <div className="panel" key={option.id}>
+                      <div className="grid two">
+                        <div className="field">
+                          <label>选项名称</label>
+                          <input value={option.label} onChange={(event) => updateOption(index, optionIndex, "label", event.target.value)} />
+                        </div>
+                        <div className="field">
+                          <label>判断依据</label>
+                          <input value={option.criteria} onChange={(event) => updateOption(index, optionIndex, "criteria", event.target.value)} />
+                        </div>
+                      </div>
+                      <button style={{ marginTop: 8 }} disabled={config.options.length <= 1} onClick={() => removeOption(index, optionIndex)}>
+                        删除选项
+                      </button>
+                    </div>
+                  ))}
                 </div>
+                <button onClick={() => addOption(index)}>添加选项</button>
               </div>
             ))}
+            <button className="primary" onClick={addLabelGroup}>添加问题组</button>
           </div>
         </section>
 

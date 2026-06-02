@@ -6,6 +6,7 @@ import type { DemoUser, Task, UserRole } from "./types";
 export const STORAGE_KEYS = {
   CURRENT_ROLE: "label_platform_current_role",
   CURRENT_USER_ID: "label_platform_current_user_id",
+  IDENTITY_CONFIRMED: "label_platform_identity_confirmed",
   DEMO_USERS: "label_platform_demo_users",
   TASKS: "label_platform_tasks",
   CURRENT_REQUESTER_TASK_ID: "label_platform_current_requester_task_id"
@@ -57,6 +58,7 @@ export function resetWithDemoData() {
   writeJson(STORAGE_KEYS.TASKS, createDemoTasks());
   window.localStorage.setItem(STORAGE_KEYS.CURRENT_ROLE, "requester");
   window.localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, "requester_1");
+  window.localStorage.setItem(STORAGE_KEYS.IDENTITY_CONFIRMED, "false");
 }
 
 export function getUsers() {
@@ -85,6 +87,14 @@ export function getCurrentUserId() {
 
 export function setCurrentUserId(id: string) {
   window.localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, id);
+}
+
+export function isIdentityConfirmed() {
+  return readText(STORAGE_KEYS.IDENTITY_CONFIRMED, "false") === "true";
+}
+
+export function setIdentityConfirmed(value: boolean) {
+  window.localStorage.setItem(STORAGE_KEYS.IDENTITY_CONFIRMED, value ? "true" : "false");
 }
 
 export function getCurrentUser() {

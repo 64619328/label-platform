@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AnnotatePro | Annotator Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@450&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                "surface-bright": "#faf8ff",
+                "surface-dim": "#d2d9f4",
+                "surface-container-high": "#e2e7ff",
+                "on-tertiary-fixed": "#002109",
+                "tertiary-container": "#00843a",
+                "secondary-fixed": "#d3e4fe",
+                "secondary-container": "#d0e1fb",
+                "on-error": "#ffffff",
+                "primary-fixed-dim": "#b3c5ff",
+                "on-primary-fixed": "#001849",
+                "surface-variant": "#dae2fd",
+                "surface-container-low": "#f2f3ff",
+                "secondary": "#505f76",
+                "on-background": "#131b2e",
+                "tertiary-fixed": "#6bff8f",
+                "error-container": "#ffdad6",
+                "inverse-on-surface": "#eef0ff",
+                "on-primary-container": "#f8f7ff",
+                "on-surface": "#131b2e",
+                "surface-container": "#eaedff",
+                "surface-tint": "#0054d6",
+                "on-secondary": "#ffffff",
+                "on-secondary-fixed-variant": "#38485d",
+                "surface-container-lowest": "#ffffff",
+                "on-tertiary-container": "#e7ffe5",
+                "surface-container-highest": "#dae2fd",
+                "tertiary-fixed-dim": "#4ae176",
+                "inverse-surface": "#283044",
+                "error": "#ba1a1a",
+                "primary-fixed": "#dae1ff",
+                "tertiary": "#00682c",
+                "on-primary-fixed-variant": "#003fa4",
+                "primary-container": "#0066ff",
+                "on-surface-variant": "#424656",
+                "on-secondary-container": "#54647a",
+                "outline-variant": "#c2c6d8",
+                "on-error-container": "#93000a",
+                "primary": "#0050cb",
+                "outline": "#727687",
+                "on-tertiary-fixed-variant": "#005321",
+                "on-secondary-fixed": "#0b1c30",
+                "inverse-primary": "#b3c5ff",
+                "on-tertiary": "#ffffff",
+                "surface": "#faf8ff",
+                "on-primary": "#ffffff",
+                "secondary-fixed-dim": "#b7c8e1",
+                "background": "#faf8ff"
+            },
+            "borderRadius": {
+                "DEFAULT": "0.125rem",
+                "lg": "0.25rem",
+                "xl": "0.5rem",
+                "full": "0.75rem"
+            },
+            "spacing": {
+                "unit-4": "1rem",
+                "unit-8": "2rem",
+                "gutter": "1rem",
+                "margin-desktop": "2rem",
+                "unit-2": "0.5rem",
+                "base": "4px",
+                "margin-mobile": "1rem",
+                "unit-1": "0.25rem",
+                "unit-6": "1.5rem",
+                "container-max": "1440px"
+            },
+            "fontFamily": {
+                "label-caps": ["Inter"],
+                "data-mono": ["JetBrains Mono"],
+                "headline-md": ["Inter"],
+                "display-lg": ["Inter"],
+                "headline-sm": ["Inter"],
+                "body-lg": ["Inter"],
+                "body-md": ["Inter"],
+                "body-sm": ["Inter"]
+            },
+            "fontSize": {
+                "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                "data-mono": ["13px", {"lineHeight": "20px", "fontWeight": "450"}],
+                "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                "display-lg": ["36px", {"lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                "body-sm": ["13px", {"lineHeight": "18px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #F8FAFC;
+        }
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: auto auto;
+            gap: 24px;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(8px);
+            border: 1px solid #E2E8F0;
+        }
+    </style>
+</head>
+<body class="text-on-surface">
+<!-- TopNavBar -->
+<header class="bg-surface-container-lowest dark:bg-surface-container-high border-b border-outline-variant dark:border-outline flex justify-between items-center w-full px-margin-desktop h-14 z-50 fixed top-0 left-0">
+<div class="flex items-center gap-unit-6">
+<span class="text-headline-sm font-headline-sm font-bold text-primary dark:text-primary-fixed">AnnotatePro</span>
+<nav class="hidden md:flex gap-unit-4">
+<a class="text-primary dark:text-primary-fixed border-b-2 border-primary py-4 font-label-caps text-label-caps" href="#">Dashboard</a>
+<a class="text-on-surface-variant dark:text-surface-variant py-4 hover:bg-surface-container dark:hover:bg-inverse-surface transition-colors font-label-caps text-label-caps" href="#">Tasks</a>
+<a class="text-on-surface-variant dark:text-surface-variant py-4 hover:bg-surface-container dark:hover:bg-inverse-surface transition-colors font-label-caps text-label-caps" href="#">Earnings</a>
+</nav>
+</div>
+<div class="flex items-center gap-unit-4">
+<button class="material-symbols-outlined text-on-surface-variant">notifications</button>
+<img alt="User Profile" class="w-8 h-8 rounded-full border border-outline-variant" data-alt="A professional headshot of a young man with a friendly expression, wearing a clean white shirt, set against a soft, neutral studio background. The lighting is bright and even, reinforcing a high-end corporate light-mode aesthetic. The image is crisp with a shallow depth of field, focusing on the individual's approachable yet professional demeanor." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCqJ4tPEQ4W3we6dAfWjmTZoA6n8djMA3_MkjjmAevuUsGJl8vJ0kKwGIQ-cKFh1GvCVQJZOWpkVyeBNddmoxDfWfjBcHJ0BSXXZV8ASYY9iWlB-WmqGorelZcFkUGexeSrnB0hcZQMi6F9JLQXlB-71yy6peeBUpTeKSNiDJrSV2kwuoGCeVx9LuQKAxkyIkbCmZ9pRaOG0CSfez3OkhIyqKcOv3-V2ndPIL0LbxykWcAMHPI4wnfL7YmjRuo67BBOUYH1DPgi5t4"/>
+</div>
+</header>
+<div class="flex pt-14">
+<!-- SideNavBar -->
+<aside class="bg-surface dark:bg-inverse-surface border-r border-outline-variant dark:border-outline flex flex-col h-[calc(100vh-3.5rem)] w-64 p-unit-4 gap-unit-2 fixed left-0 hidden md:flex">
+<div class="mb-unit-6 px-unit-2">
+<p class="text-label-caps font-label-caps text-on-surface-variant">Task Categories</p>
+<h3 class="text-body-lg font-bold">Precision Labeling</h3>
+</div>
+<nav class="flex-1 flex flex-col gap-1">
+<a class="bg-secondary-container dark:bg-on-secondary-fixed-variant text-on-secondary-container dark:text-secondary-fixed rounded-lg flex items-center gap-3 p-3 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">visibility</span>
+<span class="font-label-caps text-label-caps">Computer Vision</span>
+</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high flex items-center gap-3 p-3 rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined">translate</span>
+<span class="font-label-caps text-label-caps">NLP</span>
+</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high flex items-center gap-3 p-3 rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined">mic</span>
+<span class="font-label-caps text-label-caps">Audio</span>
+</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high flex items-center gap-3 p-3 rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined">settings_remote</span>
+<span class="font-label-caps text-label-caps">Lidar</span>
+</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high flex items-center gap-3 p-3 rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined">layers</span>
+<span class="font-label-caps text-label-caps">Multi-modal</span>
+</a>
+</nav>
+<button class="bg-primary text-on-primary py-3 rounded-lg flex items-center justify-center gap-2 mb-unit-6 font-label-caps text-label-caps hover:opacity-90 transition-all">
+<span class="material-symbols-outlined">add</span>
+                New Project
+            </button>
+<div class="border-t border-outline-variant pt-unit-4 flex flex-col gap-1">
+<a class="text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high flex items-center gap-3 p-3 rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-caps text-label-caps">Settings</span>
+</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high flex items-center gap-3 p-3 rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">help_outline</span>
+<span class="font-label-caps text-label-caps">Help</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 ml-0 md:ml-64 p-unit-8 min-h-screen">
+<header class="mb-unit-8">
+<h1 class="font-display-lg text-display-lg text-on-surface mb-1">Annotator Dashboard</h1>
+<p class="font-body-md text-on-surface-variant">Welcome back, Alex. Here's your efficiency overview for today.</p>
+</header>
+<!-- Stats Overview - Bento Grid Pattern -->
+<section class="grid grid-cols-1 md:grid-cols-4 gap-unit-6 mb-unit-8">
+<div class="md:col-span-2 glass-card p-unit-6 rounded-xl flex flex-col justify-between">
+<div>
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-2 uppercase tracking-wider">Total Earnings</p>
+<h2 class="font-display-lg text-display-lg text-primary">$1,284.50</h2>
+</div>
+<div class="mt-unit-4 flex items-center gap-2 text-tertiary">
+<span class="material-symbols-outlined">trending_up</span>
+<span class="font-data-mono text-data-mono">+12% from last week</span>
+</div>
+</div>
+<div class="glass-card p-unit-6 rounded-xl">
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-2 uppercase tracking-wider">Completed Count</p>
+<h2 class="font-headline-md text-headline-md text-on-surface">432</h2>
+<div class="mt-4 w-full bg-surface-container h-1 rounded-full overflow-hidden">
+<div class="bg-tertiary h-full w-3/4"></div>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-2">75% of monthly goal</p>
+</div>
+<div class="glass-card p-unit-6 rounded-xl">
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-2 uppercase tracking-wider">Active Tasks</p>
+<h2 class="font-headline-md text-headline-md text-on-surface">12</h2>
+<div class="mt-4 flex -space-x-2">
+<img class="w-8 h-8 rounded-full border-2 border-white" data-alt="A professional close-up of a woman in a technology office environment, used for a collaborator avatar. The lighting is natural and bright, matching a professional corporate theme." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDj8LAmpKdZG2z-C7_uc_eP1f26hxPwBWeK0yDojrQNY_RAwPOCxaTv8oSC7-a9VvhjX5f9HoU-4kkuEyinW483p5RqNSWg7priVjQ5DPafLdjzJXtv-LheC1VKnYaWxOuA2E2N9IeUrPiBM04pzlh0TvKqNoll1FrPpkHnScCBhGNFKNTCxTue3Fh_NndpAkCG1tMyoW1VlqweXakF8n9TXghSTFBv2ZSgpJQVhUGWsP4wfTuDN8ZmjnHbReX5Z1k6XtjJ9hlUwOA"/>
+<img class="w-8 h-8 rounded-full border-2 border-white" data-alt="A portrait of a focused professional at a desk, part of a team avatar stack. The background is slightly blurred with soft blue and white tones, reflecting a modern workspace aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDS81o-lDxJ-UxT56E8a4jEVTUcqHewBx5gNC-TNoPm7RMAv1RJ8UDW_dyhQo2b14XDZDRHoNO-PRiJIWiLzkky42STSbTnsBrctbdBi6uTOgkKnnABJNwhlLwUXecHm0QPu4rdnfyEPxjOn9JOwTUWitgP999fF2ZrEHMqE4giKPebt3DK-fbMtp2p8T9AyzVT2PNJJmigDrtF0KzCwth1D3GnQo_7JgVKc7zf3VMd8kGY3t1WZlceuxTEDK8ZzJe9rBsoOdURn00"/>
+<div class="w-8 h-8 rounded-full bg-surface-container-high border-2 border-white flex items-center justify-center text-[10px] font-bold">+4</div>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-2">Shared in 3 projects</p>
+</div>
+</section>
+<!-- Active Tasks List -->
+<section class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm">
+<div class="p-unit-6 border-b border-outline-variant flex justify-between items-center">
+<h3 class="font-headline-sm text-headline-sm">My Active Tasks</h3>
+<div class="flex gap-2">
+<button class="material-symbols-outlined text-on-surface-variant p-2 hover:bg-surface-container rounded-lg transition-colors">filter_list</button>
+<button class="material-symbols-outlined text-on-surface-variant p-2 hover:bg-surface-container rounded-lg transition-colors">search</button>
+</div>
+</div>
+<div class="divide-y divide-outline-variant">
+<!-- Task Item 1 -->
+<div class="p-unit-6 flex flex-col md:flex-row md:items-center gap-unit-6 hover:bg-surface-container-low transition-colors group">
+<div class="w-24 h-16 rounded-lg overflow-hidden bg-surface-container flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="A high-resolution image of a futuristic autonomous vehicle driving on a clean city street at dusk. The scene is illuminated by glowing blue and white streetlights, creating a high-contrast industrial machine learning vibe. The style is sharp, clean, and professional." src="https://lh3.googleusercontent.com/aida-public/AB6AXuABLtDFYpYYad-phgwdeG1JIbd93rl52G-2LEbiz8qFchSD_MmMeCZc2e9L5bKF90UDAG5opIiJN09HjRlnjTKOV53YegNmcrTFjd3JcfOjkwfqsCUj7GRMrZcbCZpULB1TYcO9n9RS5Y5qalEskpPPa770XwcrawSxRJ959iwW8cK2iBSv_a6v3qRJ_3XMKy7emfcTO8D6hONoVpKUwJGF-Y-sP8OVHCoxc5pET_mg2eQR9jGDw5GA51DQRZC73QVCLhJ2iG60uAg"/>
+</div>
+<div class="flex-1">
+<div class="flex items-center gap-2 mb-1">
+<span class="bg-primary-fixed text-on-primary-fixed-variant text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-tight">Computer Vision</span>
+<span class="font-data-mono text-data-mono text-on-surface-variant">#TX-8802</span>
+</div>
+<h4 class="font-body-lg font-bold text-on-surface">Bounding Box: Urban Pedestrians</h4>
+<div class="flex items-center gap-unit-4 mt-2">
+<div class="flex-1 max-w-[200px] h-1.5 bg-surface-container rounded-full overflow-hidden">
+<div class="bg-primary h-full w-2/3"></div>
+</div>
+<span class="font-data-mono text-data-mono text-on-surface-variant">67%</span>
+</div>
+</div>
+<div class="flex items-center gap-unit-4 md:text-right">
+<div class="hidden lg:block">
+<p class="font-label-caps text-label-caps text-on-surface-variant">Estimated Pay</p>
+<p class="font-body-md font-bold text-on-surface">$45.00</p>
+</div>
+<button class="bg-primary text-on-primary px-unit-4 py-2 rounded font-label-caps text-label-caps hover:bg-primary-container transition-all flex items-center gap-2">
+                                Continue Annotation
+                                <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Task Item 2 -->
+<div class="p-unit-6 flex flex-col md:flex-row md:items-center gap-unit-6 hover:bg-surface-container-low transition-colors group">
+<div class="w-24 h-16 rounded-lg overflow-hidden bg-surface-container flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="A close-up of complex code on a dark screen with vibrant syntax highlighting in blue, green, and pink. The atmosphere is highly technical and focused, representing an NLP task. The lighting is low-key with a soft glow from the monitor, emphasizing the precision of the labeling process." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCczzpXWWhPr7noRxVkenH3TSosb12762vkO_2MS10TiIDr7wOaGzILQTC5uf6R97P9gXhpgsurQOuUZAW1W8NvUdeC840kgrtm4jArdAyzLznw2HY4Uv-7MXZ1v_AjmsKMd0eEYAuBbMT3ZaeT-Mqc2s_Say5YelsmEWJWusO3QW6Q2cf0SBORmomKgmmQGN5D5TUKgMAn3w1_1Rn9HTOpsSQ_3ljdru5c5AdoXY-hFqxuUIhFm3XnHJNnFdeVX3umfI4IYcs5uCY"/>
+</div>
+<div class="flex-1">
+<div class="flex items-center gap-2 mb-1">
+<span class="bg-secondary-fixed text-on-secondary-fixed-variant text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-tight">NLP</span>
+<span class="font-data-mono text-data-mono text-on-surface-variant">#TX-1149</span>
+</div>
+<h4 class="font-body-lg font-bold text-on-surface">Sentiment Analysis: Tech Reviews</h4>
+<div class="flex items-center gap-unit-4 mt-2">
+<div class="flex-1 max-w-[200px] h-1.5 bg-surface-container rounded-full overflow-hidden">
+<div class="bg-primary h-full w-1/4"></div>
+</div>
+<span class="font-data-mono text-data-mono text-on-surface-variant">25%</span>
+</div>
+</div>
+<div class="flex items-center gap-unit-4 md:text-right">
+<div class="hidden lg:block">
+<p class="font-label-caps text-label-caps text-on-surface-variant">Estimated Pay</p>
+<p class="font-body-md font-bold text-on-surface">$12.50</p>
+</div>
+<button class="bg-primary text-on-primary px-unit-4 py-2 rounded font-label-caps text-label-caps hover:bg-primary-container transition-all flex items-center gap-2">
+                                Continue Annotation
+                                <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Task Item 3 -->
+<div class="p-unit-6 flex flex-col md:flex-row md:items-center gap-unit-6 hover:bg-surface-container-low transition-colors group">
+<div class="w-24 h-16 rounded-lg overflow-hidden bg-surface-container flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="A professional studio microphone with a sleek metallic finish, isolated against a dark, minimalist background. A subtle warm light glints off the chrome surface, representing an audio labeling task. The mood is silent and premium, emphasizing high-fidelity recording and precision." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCWX6GqZ213W41fnpqieJjWy7s_GiFi2pAkOuhueIaVuczZrb9DSgwuwjYJXAddAH4NiMU-WTemNWOUFXHhSQf6SQSgK40QqYjjGSB-xH8icfdyr4p9zMW2pIDdajATS6OI2igkIMyrqe_g0Qe0o5CfujNBnTq_c7xLmSzHTfD5pnsbfCdjt_5oZTwNtdPKu07rQETty16_5LM6yZdyI1-y7niQ04bzoHNS5kAKkP0uMf9aelViN-2_aT_eBUtk7wQcdD1GFJo3ejY"/>
+</div>
+<div class="flex-1">
+<div class="flex items-center gap-2 mb-1">
+<span class="bg-tertiary-fixed text-on-tertiary-fixed-variant text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-tight">Audio</span>
+<span class="font-data-mono text-data-mono text-on-surface-variant">#TX-5532</span>
+</div>
+<h4 class="font-body-lg font-bold text-on-surface">Phonetic Transcription: Medical</h4>
+<div class="flex items-center gap-unit-4 mt-2">
+<div class="flex-1 max-w-[200px] h-1.5 bg-surface-container rounded-full overflow-hidden">
+<div class="bg-primary h-full w-4/5"></div>
+</div>
+<span class="font-data-mono text-data-mono text-on-surface-variant">80%</span>
+</div>
+</div>
+<div class="flex items-center gap-unit-4 md:text-right">
+<div class="hidden lg:block">
+<p class="font-label-caps text-label-caps text-on-surface-variant">Estimated Pay</p>
+<p class="font-body-md font-bold text-on-surface">$88.00</p>
+</div>
+<button class="bg-primary text-on-primary px-unit-4 py-2 rounded font-label-caps text-label-caps hover:bg-primary-container transition-all flex items-center gap-2">
+                                Continue Annotation
+                                <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+<div class="p-unit-4 bg-surface-container-low border-t border-outline-variant text-center">
+<button class="text-primary font-label-caps text-label-caps hover:underline">View All Task History</button>
+</div>
+</section>
+</main>
+</div>
+<!-- Mobile Bottom Navigation -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full bg-surface-container-lowest border-t border-outline-variant flex justify-around items-center h-16 z-50">
+<button class="flex flex-col items-center gap-1 text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+<span class="text-[10px] font-label-caps uppercase">Home</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined">assignment</span>
+<span class="text-[10px] font-label-caps uppercase">Tasks</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined">payments</span>
+<span class="text-[10px] font-label-caps uppercase">Wallet</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined">person</span>
+<span class="text-[10px] font-label-caps uppercase">Profile</span>
+</button>
+</nav>
+<script>
+        // Simple micro-interaction for task progress bars
+        document.querySelectorAll('.bg-primary').forEach(bar => {
+            const width = bar.style.width;
+            bar.style.width = '0%';
+            setTimeout(() => {
+                bar.style.transition = 'width 1s cubic-bezier(0.4, 0, 0.2, 1)';
+                bar.style.width = width;
+            }, 300);
+        });
+
+        // Hover effect for side nav
+        const sideNavItems = document.querySelectorAll('aside nav a');
+        sideNavItems.forEach(item => {
+            item.addEventListener('mouseenter', () => {
+                if(!item.classList.contains('bg-secondary-container')) {
+                    item.classList.add('translate-x-1');
+                }
+            });
+            item.addEventListener('mouseleave', () => {
+                item.classList.remove('translate-x-1');
+            });
+        });
+    </script>
+</body></html>

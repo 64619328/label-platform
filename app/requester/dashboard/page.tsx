@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { AppHeader } from "@/components/AppHeader";
 import { ImageViewer } from "@/components/ImageViewer";
 import { PackageBadge, TaskMeta } from "@/components/TaskMeta";
@@ -45,8 +45,11 @@ export default function RequesterDashboardPage() {
 
   const totals = useMemo(() => {
     const allStats = requesterTasks.map(taskStats);
+    const active = requesterTasks.filter((task) => !["completed", "cancelled", "draft"].includes(task.status)).length;
+    const completionRate = requesterTasks.length ? Math.round((requesterTasks.filter((task) => task.status === "completed").length / requesterTasks.length) * 100) : 0;
     return {
       total: requesterTasks.length,
+      active,
       formal: requesterTasks.filter((task) => task.status === "formal_in_progress").length,
       review: requesterTasks.filter((task) => task.status === "pending_review").length,
       completed: requesterTasks.filter((task) => task.status === "completed").length,
@@ -54,9 +57,29 @@ export default function RequesterDashboardPage() {
       packages: requesterTasks.reduce((sum, task) => sum + task.packages.length, 0),
       items: requesterTasks.reduce((sum, task) => sum + task.formalItems.length, 0),
       approved: allStats.reduce((sum, stats) => sum + stats.approvedItems, 0),
-      amount: allStats.reduce((sum, stats) => sum + stats.amount, 0)
+      amount: allStats.reduce((sum, stats) => sum + stats.amount, 0),
+      completionRate
     };
   }, [requesterTasks]);
+
+  const supplierDistribution = useMemo(() => {
+    const map = new Map<string, number>();
+    requesterTasks.forEach((task) => {
+      const supplierId = task.selectedAnnotatorId ?? task.assignedAnnotatorId;
+      if (!supplierId) return;
+      map.set(supplierId, (map.get(supplierId) ?? 0) + task.formalItems.length);
+    });
+    return Array.from(map.entries()).map(([supplierId, count]) => ({
+      supplierId,
+      name: users.find((user) => user.id === supplierId)?.name ?? supplierId,
+      count
+    }));
+  }, [requesterTasks, users]);
+
+  const maxSupplierCount = Math.max(1, ...supplierDistribution.map((item) => item.count));
+  const healthStatus = totals.review > 3 || requesterTasks.some((task) => task.status === "partially_rejected")
+    ? "需要关注"
+    : "Optimal";
 
   function persist(nextTask: Task) {
     const next = tasks.map((task) => (task.id === nextTask.id ? nextTask : task));
@@ -106,77 +129,148 @@ export default function RequesterDashboardPage() {
       <div className="page grid">
         <div className="row between">
           <div>
-            <h1>需求方工作台</h1>
-            <p className="muted">任务列表点击后展开详情，完成报价选择、抽检验收、中止和下载。</p>
+            <span className="side-kicker">Task Management</span>
+            <h1>任务管理</h1>
+            <p className="muted">管理图像标注任务、报价选择、子任务包进度和抽检验收。</p>
           </div>
           <Link href="/requester/tasks/new">
             <button className="primary">发布任务</button>
           </Link>
         </div>
 
-        <section className="stats">
-          <Stat label="任务数" value={totals.total} />
-          <Stat label="正式标注中" value={totals.formal} />
-          <Stat label="待验收" value={totals.review} />
-          <Stat label="已完成" value={totals.completed} />
-          <Stat label="已中止" value={totals.cancelled} />
-          <Stat label="子任务包" value={totals.packages} />
-          <Stat label="正式数据" value={totals.items} />
-          <Stat label="预计结算" value={money(totals.amount)} />
+        <section className="stats three">
+          <StatCard label="Active Tasks" value={totals.active} trend={`+${totals.review} 待验收`} icon="▣" />
+          <StatCard label="Total Suppliers" value={supplierDistribution.length} trend={`${totals.packages} 个子任务包`} icon="◎" />
+          <StatCard label="Completion Rate" value={`${totals.completionRate}%`} progress={totals.completionRate} icon="✓" />
         </section>
 
         <section className="dashboard">
+          <div className="panel task-list-panel">
+            <div className="monitor-head">
+              <span className="side-kicker">Live Tasks Monitor</span>
+              <div className="row">
+                <button className="small-icon">↻</button>
+                <button className="small-icon">⋯</button>
+              </div>
+            </div>
+            <table className="task-table">
+              <thead>
+                <tr>
+                  <th>任务 ID</th>
+                  <th>任务名称</th>
+                  <th>创建者</th>
+                  <th>状态</th>
+                  <th>标注方</th>
+                  <th style={{ textAlign: "right" }}>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {requesterTasks.map((task) => {
+                  const annotator = users.find((user) => user.id === task.selectedAnnotatorId || user.id === task.assignedAnnotatorId)?.name ?? "-";
+                  const creator = users.find((user) => user.id === task.requesterId)?.name ?? task.requesterId;
+                  return (
+                    <Fragment key={task.id}>
+                      <tr className={task.id === selected?.id ? "active" : ""} onClick={() => setSelectedId(task.id)}>
+                        <td className="mono">#{task.id.slice(-8).toUpperCase()}</td>
+                        <td>
+                          <strong>{task.title}</strong>
+                          <div className="muted">正式数据 {task.formalItems.length} 条 · 截止 {formatDate(task.deadline)}</div>
+                        </td>
+                        <td>{creator}</td>
+                        <td><span className="badge">{taskStatusLabels[task.status]}</span></td>
+                        <td>{annotator}</td>
+                        <td>
+                          <div className="action-cell">
+                            {task.status === "draft" ? (
+                              <Link href={`/requester/tasks/new?edit=${task.id}`}>
+                                <button className="small-icon" title="继续编辑草稿">✎</button>
+                              </Link>
+                            ) : (
+                              <button className="small-icon" title="查看详情">↗</button>
+                            )}
+                            <button
+                              className="small-icon"
+                              title="下载"
+                              disabled={task.status !== "completed" && task.status !== "cancelled"}
+                              onClick={(event) => { event.stopPropagation(); download(task); }}
+                            >
+                              ⇩
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                      {task.id === selected?.id ? (
+                        <tr className="embedded-detail-row">
+                          <td colSpan={6}>
+                            <TaskDetail
+                              task={task}
+                              users={users}
+                              sampleCount={sampleCount}
+                              setSampleCount={setSampleCount}
+                              samplingMode={samplingMode}
+                              setSamplingMode={setSamplingMode}
+                              manualIds={manualIds}
+                              setManualIds={setManualIds}
+                              labelConfigId={labelConfigId}
+                              setLabelConfigId={setLabelConfigId}
+                              labelOptionIds={labelOptionIds}
+                              setLabelOptionIds={setLabelOptionIds}
+                              rejectDraft={rejectDraft}
+                              setRejectDraft={setRejectDraft}
+                              cancelReason={cancelReason}
+                              setCancelReason={setCancelReason}
+                              chooseQuote={chooseQuote}
+                              createBatch={createBatch}
+                              approveItem={approveItem}
+                              rejectItem={rejectItem}
+                              approvePackage={(task, packageId) => persist(approvePackage(task, packageId))}
+                              handleAppeal={(task, itemId, approve, reason) => persist(handleAppeal(task, itemId, approve, reason))}
+                              cancel={cancel}
+                              download={download}
+                            />
+                          </td>
+                        </tr>
+                      ) : null}
+                    </Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+            <div className="row between" style={{ padding: "14px 18px", background: "var(--surface-low)" }}>
+              <span className="muted">Showing {requesterTasks.length} of {totals.total} tasks</span>
+              <div className="row">
+                <button>Previous</button>
+                <button className="primary">1</button>
+                <button>Next</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="insights-grid">
           <div className="panel">
-            <h2>任务列表</h2>
-            <div className="list">
-              {requesterTasks.map((task) => {
-                const stats = taskStats(task);
-                return (
-                  <button key={task.id} className={task.id === selected?.id ? "item active" : "item"} onClick={() => setSelectedId(task.id)}>
-                    <div className="row between">
-                      <strong>{task.title}</strong>
-                      <span>{taskStatusLabels[task.status]}</span>
-                    </div>
-                    <div className="muted" style={{ marginTop: 6 }}>
-                      包 {stats.approvedPackages}/{stats.packageCount} · 数据 {stats.approvedItems}/{task.formalItems.length}
-                    </div>
-                  </button>
-                );
-              })}
+            <h2>任务分布</h2>
+            <p className="muted">按照供应商承接的正式数据量统计。</p>
+            <div className="bar-chart">
+              {supplierDistribution.length ? supplierDistribution.map((item) => (
+                <div className="bar-wrap" key={item.supplierId}>
+                  <div className="bar" style={{ height: `${Math.max(10, (item.count / maxSupplierCount) * 100)}%` }} title={item.name}></div>
+                  <span className="muted">{item.name.replace("标注方 ", "")}</span>
+                  <strong>{item.count}</strong>
+                </div>
+              )) : <div className="empty" style={{ width: "100%" }}>暂无供应商数据</div>}
             </div>
           </div>
 
-          {selected ? (
-            <TaskDetail
-              task={selected}
-              users={users}
-              sampleCount={sampleCount}
-              setSampleCount={setSampleCount}
-              samplingMode={samplingMode}
-              setSamplingMode={setSamplingMode}
-              manualIds={manualIds}
-              setManualIds={setManualIds}
-              labelConfigId={labelConfigId}
-              setLabelConfigId={setLabelConfigId}
-              labelOptionIds={labelOptionIds}
-              setLabelOptionIds={setLabelOptionIds}
-              rejectDraft={rejectDraft}
-              setRejectDraft={setRejectDraft}
-              cancelReason={cancelReason}
-              setCancelReason={setCancelReason}
-              chooseQuote={chooseQuote}
-              createBatch={createBatch}
-              approveItem={approveItem}
-              rejectItem={rejectItem}
-              approvePackage={(task, packageId) => persist(approvePackage(task, packageId))}
-              handleAppeal={(task, itemId, approve, reason) => persist(handleAppeal(task, itemId, approve, reason))}
-              cancel={cancel}
-              download={download}
-            />
-          ) : (
-            <div className="empty">暂无任务</div>
-          )}
+          <div className="health-card">
+            <div style={{ position: "relative", zIndex: 1 }}>
+              <h2>健康诊断：{healthStatus}</h2>
+              <p>当前待验收任务 {totals.review} 个，部分驳回任务 {requesterTasks.filter((task) => task.status === "partially_rejected").length} 个，平均处理链路稳定。</p>
+              <button>View Diagnostic Logs</button>
+            </div>
+          </div>
         </section>
+
       </div>
     </main>
   );
@@ -187,6 +281,25 @@ function Stat({ label, value }: { label: string; value: string | number }) {
     <div className="stat">
       <span className="muted">{label}</span>
       <b>{value}</b>
+    </div>
+  );
+}
+
+function StatCard({ label, value, trend, progress, icon }: { label: string; value: string | number; trend?: string; progress?: number; icon: string }) {
+  return (
+    <div className="stat large">
+      <div>
+        <span className="side-kicker">{label}</span>
+        <b>{value}</b>
+        {typeof progress === "number" ? (
+          <div className="mini-progress">
+            <span style={{ width: `${Math.min(100, Math.max(0, progress))}%` }} />
+          </div>
+        ) : (
+          <div className="trend">↗ {trend}</div>
+        )}
+      </div>
+      <div className="stat-icon">{icon}</div>
     </div>
   );
 }
@@ -246,7 +359,14 @@ function TaskDetail(props: {
             <h2>{task.title}</h2>
             <TaskMeta task={task} />
           </div>
-          <span className="badge">截止 {formatDate(task.deadline)}</span>
+          <div className="row">
+            <span className="badge">截止 {formatDate(task.deadline)}</span>
+            {task.status === "draft" ? (
+              <Link href={`/requester/tasks/new?edit=${task.id}`}>
+                <button className="primary">继续编辑草稿</button>
+              </Link>
+            ) : null}
+          </div>
         </div>
         <p>{task.description}</p>
         <div className="grid two">
