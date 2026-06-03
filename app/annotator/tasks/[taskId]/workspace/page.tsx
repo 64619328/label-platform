@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AppHeader } from "@/components/AppHeader";
 import { ImageViewer } from "@/components/ImageViewer";
 import { isComplete, LabelForm } from "@/components/LabelForm";
+import { SourceDataMeta } from "@/components/SourceDataMeta";
 import { PackageBadge } from "@/components/TaskMeta";
 import { issueTypeLabels } from "@/lib/labels";
 import { getCurrentUser, getTasks, saveTasks } from "@/lib/storage";
@@ -28,7 +29,10 @@ export default function WorkspacePage() {
   const task = tasks.find((item) => item.id === params.taskId);
   const currentUser = getCurrentUser();
 
-  const packageItem = useMemo(() => task?.packages.find((pkg) => pkg.id === selectedPackageId) ?? task?.packages[0], [task, selectedPackageId]);
+  const myPackages = useMemo(() => task?.packages.filter((pkg) => pkg.annotatorId === currentUser.id) ?? [], [task, currentUser.id]);
+  const claimableCount = task?.packages.filter((pkg) => !pkg.annotatorId && pkg.status === "not_started").length ?? 0;
+  const activeOwnedPackage = myPackages.find((pkg) => pkg.status === "not_started" || pkg.status === "in_progress");
+  const packageItem = useMemo(() => myPackages.find((pkg) => pkg.id === selectedPackageId) ?? activeOwnedPackage ?? myPackages[0], [myPackages, selectedPackageId, activeOwnedPackage]);
   const packageItems = task && packageItem ? task.formalItems.filter((item) => packageItem.itemIds.includes(item.id)) : [];
   const activeItem = packageItems.find((item) => item.id === activeItemId) ?? packageItems[0];
 
@@ -51,7 +55,9 @@ export default function WorkspacePage() {
     if (!task) return;
     const nextTask = ensurePackages(task, currentUser.id, packageSize);
     persist(nextTask);
-    setSelectedPackageId(nextTask.packages[0]?.id ?? "");
+    const nextPackage = nextTask.packages.find((pkg) => pkg.annotatorId === currentUser.id && (pkg.status === "not_started" || pkg.status === "in_progress"));
+    setSelectedPackageId(nextPackage?.id ?? selectedPackageId);
+    setMessage(nextPackage ? "已领取一个子任务包" : "暂无可领取的子任务包");
   }
 
   function saveValues(values: AnnotationValue[]) {
@@ -67,7 +73,9 @@ export default function WorkspacePage() {
       return;
     }
     persist(submitPackage(task, packageItem.id));
-    setMessage("子任务包已提交，等待需求方抽检验收");
+    setSelectedPackageId("");
+    setActiveItemId("");
+    setMessage("子任务包已提交，等待需求方抽检验收。可继续领取新的子任务包。");
   }
 
   function appeal(itemId: string) {
@@ -96,17 +104,25 @@ export default function WorkspacePage() {
           <div className="row between">
             <div>
               <h2>子任务包</h2>
-              <p className="muted">首次进入时设置每包数据条数；修改只影响未提交、未验收的后续包。</p>
+              <p className="muted">首次领取时设置每包数据条数；提交后可继续领取下一个未分配子任务包。</p>
             </div>
             <div className="row">
               <input style={{ width: 120 }} type="number" min="1" value={packageSize} onChange={(event) => setPackageSize(Number(event.target.value))} />
-              <button className="primary" disabled={task.status === "cancelled"} onClick={generatePackages}>
-                生成/调整包
+              <button
+                className="primary"
+                disabled={task.status === "cancelled" || task.status === "completed" || Boolean(activeOwnedPackage) || (task.packages.length > 0 && claimableCount === 0)}
+                onClick={generatePackages}
+              >
+                {task.packages.length === 0 ? "生成并领取子任务包" : "领取下一个子任务包"}
               </button>
             </div>
           </div>
           <div className="row" style={{ marginTop: 12 }}>
-            {task.packages.map((pkg) => (
+            <span className="badge">我的任务包 {myPackages.length}</span>
+            <span className="badge">待领取 {claimableCount}</span>
+          </div>
+          <div className="row" style={{ marginTop: 12 }}>
+            {myPackages.map((pkg) => (
               <button key={pkg.id} className={pkg.id === packageItem?.id ? "primary" : ""} onClick={() => setSelectedPackageId(pkg.id)}>
                 {pkg.id.slice(-6)} · {pkg.itemIds.length} 条 · <PackageBadge pkg={pkg} />
               </button>
@@ -145,6 +161,7 @@ export default function WorkspacePage() {
                   <span className="badge">{activeItem.reviewStatus}</span>
                 </div>
                 <ImageViewer imageUrls={activeItem.imageUrls} displayConfig={task.displayConfig} />
+                <SourceDataMeta item={activeItem} />
               </div>
               <LabelForm labelConfigs={task.labelConfigs} values={activeItem.annotationValues ?? []} onChange={saveValues} />
               {activeItem.rejectionReason ? (
@@ -162,7 +179,7 @@ export default function WorkspacePage() {
             </div>
           </section>
         ) : (
-          <div className="empty">请先生成子任务包</div>
+          <div className="empty">请先领取子任务包</div>
         )}
       </div>
     </main>

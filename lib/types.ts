@@ -71,6 +71,7 @@ export type RejectionIssueType =
 export type AnnotationItem = {
   id: string;
   imageUrls: string[];
+  sourceData?: Record<string, unknown>;
   packageId?: string;
   annotationValues?: AnnotationValue[];
   annotationNote?: string;
@@ -93,7 +94,7 @@ export type PackageStatus =
 export type AnnotationPackage = {
   id: string;
   taskId: string;
-  annotatorId: string;
+  annotatorId?: string;
   itemIds: string[];
   status: PackageStatus;
   submittedAt?: string;
@@ -122,6 +123,7 @@ export type Quote = {
   taskId: string;
   annotatorId: string;
   trialItemIds: string[];
+  trialValues?: Record<string, AnnotationValue[]>;
   unitPrice: number;
   quoteNote: string;
   status: QuoteStatus;

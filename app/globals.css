@@ -409,6 +409,189 @@ textarea {
   gap: 4px;
 }
 
+.task-market-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 18px;
+}
+
+.market-task-card {
+  display: flex;
+  min-height: 420px;
+  overflow: hidden;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+}
+
+.market-card-media {
+  position: relative;
+  height: 156px;
+  overflow: hidden;
+  background: var(--surface-high);
+}
+
+.market-card-media img,
+.my-task-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.market-card-media .badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
+
+.market-card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+.market-card-body h2,
+.my-task-main h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.price {
+  color: var(--brand);
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: nowrap;
+}
+
+.market-card-footer {
+  display: grid;
+  gap: 12px;
+  margin-top: auto;
+}
+
+.my-task-list {
+  overflow: hidden;
+  padding: 0;
+}
+
+.my-task-rows {
+  display: grid;
+}
+
+.my-task-row {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr) 240px;
+  gap: 18px;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  padding: 18px;
+}
+
+.my-task-row:last-child {
+  border-bottom: 0;
+}
+
+.my-task-row:hover {
+  background: var(--surface-low);
+}
+
+.my-task-thumb {
+  width: 112px;
+  height: 76px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--surface-high);
+}
+
+.my-task-main,
+.my-task-side {
+  display: grid;
+  gap: 8px;
+}
+
+.my-task-side {
+  justify-items: end;
+}
+
+.my-task-side .mini-progress {
+  width: 160px;
+  margin-top: 0;
+}
+
+.task-wizard {
+  display: grid;
+  gap: 18px;
+}
+
+.wizard-steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  align-items: center;
+}
+
+.wizard-step {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 58px;
+  justify-content: flex-start;
+  border-color: var(--line);
+  background: white;
+  text-align: left;
+}
+
+.wizard-step::after {
+  content: "";
+  position: absolute;
+  left: calc(100% + 2px);
+  top: 50%;
+  width: 8px;
+  height: 2px;
+  background: var(--line);
+}
+
+.wizard-step:last-child::after {
+  display: none;
+}
+
+.wizard-step span {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--surface-high);
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.wizard-step strong {
+  font-size: 14px;
+}
+
+.wizard-step.active {
+  border-color: var(--brand);
+  background: var(--surface-low);
+}
+
+.wizard-step.active span,
+.wizard-step.done span {
+  background: var(--brand);
+  color: white;
+}
+
+.wizard-panel {
+  width: min(920px, 100%);
+  min-height: 520px;
+  margin: 0 auto;
+  padding: 28px;
+}
+
 .list {
   display: grid;
   gap: 10px;
@@ -786,5 +969,18 @@ textarea {
 
   .task-row {
     grid-template-columns: 1fr;
+  }
+
+  .wizard-steps,
+  .my-task-row {
+    grid-template-columns: 1fr;
+  }
+
+  .wizard-step::after {
+    display: none;
+  }
+
+  .my-task-side {
+    justify-items: start;
   }
 }

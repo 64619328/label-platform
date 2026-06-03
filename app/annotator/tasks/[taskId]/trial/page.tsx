@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { AppHeader } from "@/components/AppHeader";
 import { ImageViewer } from "@/components/ImageViewer";
 import { isComplete, LabelForm } from "@/components/LabelForm";
+import { SourceDataMeta } from "@/components/SourceDataMeta";
 import { getCurrentUser, getTasks, saveTasks } from "@/lib/storage";
 import { submitQuote } from "@/lib/task-actions";
 import type { AnnotationValue, Task } from "@/lib/types";
@@ -37,6 +38,7 @@ export default function TrialPage() {
 
   const current = task.trialItems[active];
   const allComplete = task.trialItems.every((item) => isComplete(values[item.id] ?? item.annotationValues ?? [], task.labelConfigs));
+  const isLastTrialItem = active >= task.trialItems.length - 1;
 
   function saveCurrent(nextValues: AnnotationValue[]) {
     setValues({ ...values, [current.id]: nextValues });
@@ -83,6 +85,7 @@ export default function TrialPage() {
                 <span className="badge">{current.id}</span>
               </div>
               <ImageViewer imageUrls={current.imageUrls} displayConfig={task.displayConfig} />
+              <SourceDataMeta item={current} />
               <div className="row between">
                 <button disabled={active === 0} onClick={() => setActive(active - 1)}>
                   上一条
@@ -94,20 +97,26 @@ export default function TrialPage() {
             </div>
             <div className="grid">
               <LabelForm labelConfigs={task.labelConfigs} values={values[current.id] ?? current.annotationValues ?? []} onChange={saveCurrent} />
-              <div className="panel grid">
-                <h2>提交报价</h2>
-                <div className="field">
-                  <label>每条数据单价</label>
-                  <input type="number" min="0" step="0.01" value={unitPrice} onChange={(event) => setUnitPrice(Number(event.target.value))} />
+              {isLastTrialItem ? (
+                <div className="panel grid">
+                  <h2>提交报价</h2>
+                  <div className="field">
+                    <label>每条数据单价</label>
+                    <input type="number" min="0" step="0.01" value={unitPrice} onChange={(event) => setUnitPrice(Number(event.target.value))} />
+                  </div>
+                  <div className="field">
+                    <label>报价说明</label>
+                    <textarea value={quoteNote} onChange={(event) => setQuoteNote(event.target.value)} />
+                  </div>
+                  <button className="primary" disabled={!allComplete} onClick={submit}>
+                    提交试标和报价
+                  </button>
                 </div>
-                <div className="field">
-                  <label>报价说明</label>
-                  <textarea value={quoteNote} onChange={(event) => setQuoteNote(event.target.value)} />
+              ) : (
+                <div className="panel">
+                  <span className="muted">完成全部试标数据后，最后一条会出现报价提交入口。</span>
                 </div>
-                <button className="primary" disabled={!allComplete} onClick={submit}>
-                  提交试标和报价
-                </button>
-              </div>
+              )}
             </div>
           </section>
         ) : (

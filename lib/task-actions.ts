@@ -11,19 +11,20 @@ import type {
 import { nowIso, parseImageRows, sampleIndexes, uid } from "./utils";
 
 export function createTaskFromInput(input: DraftTaskInput, requesterId: string, publish: boolean): Task {
-  const imageSets = parseImageRows(input.imageRows);
+  const imageRows = parseImageRows(input.imageRows);
   const trialIndexes =
     input.entryMode === "trial_quote"
-      ? sampleIndexes(imageSets.length, input.trialSampleSize, input.trialSamplingMode)
+      ? sampleIndexes(imageRows.length, input.trialSampleSize, input.trialSamplingMode)
       : [];
   const trialIndexSet = new Set(trialIndexes);
   const trialItems: AnnotationItem[] = [];
   const formalItems: AnnotationItem[] = [];
 
-  imageSets.forEach((imageUrls, index) => {
+  imageRows.forEach((row, index) => {
     const annotationItem: AnnotationItem = {
       id: uid("item"),
-      imageUrls,
+      imageUrls: row.imageUrls,
+      sourceData: row.sourceData,
       reviewStatus: "not_submitted",
       updatedAt: nowIso()
     };
@@ -108,12 +109,16 @@ export function submitQuote(task: Task, annotatorId: string, unitPrice: number, 
     reviewStatus: "not_submitted" as const,
     updatedAt: nowIso()
   }));
+  const trialValues = Object.fromEntries(
+    trialItems.map((item) => [item.id, values[item.id] ?? item.annotationValues ?? []])
+  );
   const existing = task.quotes.find((quote) => quote.annotatorId === annotatorId);
   const quote = {
     id: existing?.id ?? uid("quote"),
     taskId: task.id,
     annotatorId,
     trialItemIds: trialItems.map((item) => item.id),
+    trialValues,
     unitPrice,
     quoteNote,
     status: "submitted" as const,
@@ -133,26 +138,44 @@ export function submitQuote(task: Task, annotatorId: string, unitPrice: number, 
 }
 
 export function ensurePackages(task: Task, annotatorId: string, packageSize: number): Task {
-  if (task.packages.some((item) => item.status !== "not_started" && item.status !== "in_progress")) return task;
-  const size = Math.max(1, packageSize);
-  const packages: AnnotationPackage[] = [];
-  const formalItems: AnnotationItem[] = task.formalItems.map((item) => ({ ...item, packageId: undefined }));
-  for (let index = 0; index < formalItems.length; index += size) {
-    const chunk = formalItems.slice(index, index + size);
-    const packageId = uid("pkg");
-    packages.push({
-      id: packageId,
-      taskId: task.id,
-      annotatorId,
-      itemIds: chunk.map((item) => item.id),
-      status: "not_started",
-      updatedAt: nowIso()
-    });
-    chunk.forEach((item) => {
-      item.packageId = packageId;
-    });
+  if (task.packages.some((pkg) => pkg.annotatorId === annotatorId && (pkg.status === "not_started" || pkg.status === "in_progress"))) {
+    return task;
   }
-  return { ...task, packages, formalItems, updatedAt: nowIso() };
+
+  const size = Math.max(1, packageSize);
+  let packages = task.packages;
+  let formalItems = task.formalItems;
+
+  if (packages.length === 0) {
+    const nextPackages: AnnotationPackage[] = [];
+    formalItems = task.formalItems.map((item) => ({ ...item, packageId: undefined }));
+    for (let index = 0; index < formalItems.length; index += size) {
+      const chunk = formalItems.slice(index, index + size);
+      const packageId = uid("pkg");
+      nextPackages.push({
+        id: packageId,
+        taskId: task.id,
+        itemIds: chunk.map((item) => item.id),
+        status: "not_started",
+        updatedAt: nowIso()
+      });
+      chunk.forEach((item) => {
+        item.packageId = packageId;
+      });
+    }
+    packages = nextPackages;
+  }
+
+  let claimed = false;
+  packages = packages.map((pkg) => {
+    if (!claimed && !pkg.annotatorId && pkg.status === "not_started") {
+      claimed = true;
+      return { ...pkg, annotatorId, updatedAt: nowIso() };
+    }
+    return pkg;
+  });
+
+  return { ...task, status: "formal_in_progress", packages, formalItems, updatedAt: nowIso() };
 }
 
 export function updateFormalItem(task: Task, itemId: string, annotationValues: AnnotationValue[]): Task {
@@ -244,13 +267,46 @@ export function createReviewBatch(
 }
 
 export function approveReviewItem(task: Task, batchId: string, itemId: string): Task {
+  const currentItem = task.formalItems.find((item) => item.id === itemId);
+  const alreadyApproved = currentItem?.reviewStatus === "approved";
   return {
     ...task,
     reviewBatches: task.reviewBatches.map((batch) =>
-      batch.id === batchId ? { ...batch, approvedCount: batch.approvedCount + 1 } : batch
+      batch.id === batchId && !alreadyApproved ? { ...batch, approvedCount: batch.approvedCount + 1 } : batch
     ),
     formalItems: task.formalItems.map((item) =>
       item.id === itemId
+        ? {
+            ...item,
+            reviewStatus: "approved",
+            rejectionIssueType: undefined,
+            rejectionReason: undefined,
+            updatedAt: nowIso()
+          }
+        : item
+    ),
+    updatedAt: nowIso()
+  };
+}
+
+export function approveAllPendingReviewPackages(task: Task): Task {
+  const pendingPackageIds = new Set(task.packages.filter((pkg) => pkg.status === "pending_review").map((pkg) => pkg.id));
+  if (pendingPackageIds.size === 0) return task;
+
+  const packages = task.packages.map((pkg) =>
+    pendingPackageIds.has(pkg.id)
+      ? { ...pkg, status: "approved" as const, approvedAt: nowIso(), updatedAt: nowIso() }
+      : pkg
+  );
+  const allApproved = packages.length > 0 && packages.every((pkg) => pkg.status === "approved");
+
+  return {
+    ...task,
+    stage: allApproved ? "completed" : "review",
+    status: allApproved ? "completed" : "pending_review",
+    packages,
+    formalItems: task.formalItems.map((item) =>
+      item.packageId && pendingPackageIds.has(item.packageId)
         ? {
             ...item,
             reviewStatus: "approved",
@@ -364,6 +420,7 @@ export function buildDownloadData(task: Task) {
         : [];
 
   return allowed.map((item) => ({
+    sourceData: item.sourceData,
     imageUrls: item.imageUrls,
     labels:
       item.annotationValues?.map((value) => {

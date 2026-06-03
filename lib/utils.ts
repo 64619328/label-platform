@@ -11,16 +11,50 @@ export function formatDate(value?: string) {
   return new Date(value).toLocaleDateString("zh-CN");
 }
 
+export type ParsedImageRow = {
+  imageUrls: string[];
+  sourceData?: Record<string, unknown>;
+};
+
 export function parseImageRows(rows: string) {
   return rows
     .split("\n")
-    .map((line) =>
-      line
-        .split(",")
-        .map((url) => url.trim())
-        .filter(Boolean)
-    )
-    .filter((urls) => urls.length > 0);
+    .map((line) => parseImageRow(line.trim()))
+    .filter((row): row is ParsedImageRow => Boolean(row && row.imageUrls.length > 0));
+}
+
+function parseImageRow(line: string): ParsedImageRow | null {
+  if (!line) return null;
+
+  if (line.startsWith("{")) {
+    try {
+      const sourceData = JSON.parse(line) as Record<string, unknown>;
+      const imageValue = sourceData.imageName ?? sourceData.imageUrl ?? sourceData.imageUrls;
+      const imageUrls = normalizeImageValue(imageValue);
+      return imageUrls.length > 0 ? { imageUrls, sourceData } : null;
+    } catch {
+      return null;
+    }
+  }
+
+  const imageUrls = line
+    .split(",")
+    .map((url) => url.trim())
+    .filter(Boolean);
+  return imageUrls.length > 0 ? { imageUrls } : null;
+}
+
+function normalizeImageValue(value: unknown) {
+  if (typeof value === "string") {
+    return value
+      .split(",")
+      .map((url) => url.trim())
+      .filter(Boolean);
+  }
+  if (Array.isArray(value)) {
+    return value.filter((item): item is string => typeof item === "string" && item.trim().length > 0).map((item) => item.trim());
+  }
+  return [];
 }
 
 export function sampleIndexes(total: number, size: number, mode: "first_n" | "random_n") {

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   ensureDemoData,
@@ -20,6 +20,7 @@ export function AppHeader() {
   const [showIdentityModal, setShowIdentityModal] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
 
   useEffect(() => {
     ensureDemoData();
@@ -41,6 +42,7 @@ export function AppHeader() {
     setUserId(next.id);
     setShowIdentityModal(false);
     setShowUserMenu(false);
+    router.push(roleHref(next.role));
   }
 
   function roleHref(role: UserRole) {
@@ -54,6 +56,7 @@ export function AppHeader() {
       ]
     : [
         { href: "/annotator/tasks", label: "任务大厅", icon: "▤" },
+        { href: "/annotator/tasks/my", label: "我的任务", icon: "▣" },
         { href: "/profile", label: "个人中心", icon: "◉" }
       ];
 
