@@ -14,10 +14,11 @@ import {
   createReviewBatch,
   handleAppeal,
   rejectReviewItem,
+  reviewTrialQuote,
   selectQuote,
   taskStats
 } from "@/lib/task-actions";
-import type { AnnotationItem, DemoUser, RejectionIssueType, ReviewSamplingMode, Task } from "@/lib/types";
+import type { AnnotationItem, DemoUser, RejectionIssueType, ReviewSamplingMode, Task, TrialReviewStatus } from "@/lib/types";
 import { formatDate, money } from "@/lib/utils";
 
 type Props = {
@@ -58,6 +59,19 @@ const zoomDisplayModeLabels = {
   fullscreen: "全屏沉浸展示"
 } as const;
 
+const quoteStatusLabels: Record<string, string> = {
+  draft: "草稿",
+  submitted: "已提交",
+  selected: "已选择",
+  not_selected: "未选择"
+};
+
+const trialReviewStatusLabels: Record<TrialReviewStatus, string> = {
+  pending: "试标待审核",
+  approved: "试标通过",
+  rejected: "试标不通过"
+};
+
 export function RequesterTaskDetail({ task, users, operatorId, onTaskChange, showCreationInfo = false }: Props) {
   const [sampleCount, setSampleCount] = useState(2);
   const [samplingMode, setSamplingMode] = useState<ReviewSamplingMode>("random");
@@ -74,6 +88,10 @@ export function RequesterTaskDetail({ task, users, operatorId, onTaskChange, sho
 
   function chooseQuote(quoteId: string) {
     onTaskChange(selectQuote(task, quoteId));
+  }
+
+  function reviewQuote(quoteId: string, trialReviewStatus: "approved" | "rejected") {
+    onTaskChange(reviewTrialQuote(task, quoteId, trialReviewStatus));
   }
 
   function createBatch(packageId: string) {
@@ -190,13 +208,20 @@ export function RequesterTaskDetail({ task, users, operatorId, onTaskChange, sho
                     <td>{users.find((user) => user.id === quote.annotatorId)?.name ?? quote.annotatorId}</td>
                     <td>{money(quote.unitPrice)}</td>
                     <td>{quote.quoteNote}</td>
-                    <td>{quote.status}</td>
+                    <td>
+                      <div className="row">
+                        <span className="badge">{quoteStatusLabels[quote.status]}</span>
+                        <span className={quote.trialReviewStatus === "rejected" ? "badge danger" : quote.trialReviewStatus === "approved" ? "badge ok" : "badge warn"}>
+                          {trialReviewStatusLabels[quote.trialReviewStatus ?? "pending"]}
+                        </span>
+                      </div>
+                    </td>
                     <td>
                       <div className="row">
                         <button onClick={() => setReviewQuoteId(reviewQuoteId === quote.id ? "" : quote.id)}>
                           审核试标结果
                         </button>
-                        <button disabled={task.status !== "pending_quote_selection" || quote.status !== "submitted"} onClick={() => chooseQuote(quote.id)}>
+                        <button disabled={task.status !== "pending_quote_selection" || quote.status !== "submitted" || quote.trialReviewStatus !== "approved"} onClick={() => chooseQuote(quote.id)}>
                           选择
                         </button>
                       </div>
@@ -206,7 +231,20 @@ export function RequesterTaskDetail({ task, users, operatorId, onTaskChange, sho
                     <tr>
                       <td colSpan={5}>
                         <div className="grid">
-                          <h3>审核试标结果</h3>
+                          <div className="row between">
+                            <div>
+                              <h3>审核试标结果</h3>
+                              <p className="muted">先审核试标质量，通过后才能选择该标注方。</p>
+                            </div>
+                            <div className="row">
+                              <button className={quote.trialReviewStatus === "approved" ? "primary" : ""} onClick={() => reviewQuote(quote.id, "approved")}>
+                                通过
+                              </button>
+                              <button className={quote.trialReviewStatus === "rejected" ? "danger" : ""} onClick={() => reviewQuote(quote.id, "rejected")}>
+                                不通过
+                              </button>
+                            </div>
+                          </div>
                           {task.trialItems.map((item, index) => (
                             <div className="item grid" key={item.id}>
                               <div className="row between">

@@ -117,6 +117,7 @@ export type ReviewBatch = {
 };
 
 export type QuoteStatus = "draft" | "submitted" | "selected" | "not_selected";
+export type TrialReviewStatus = "pending" | "approved" | "rejected";
 
 export type Quote = {
   id: string;
@@ -124,6 +125,7 @@ export type Quote = {
   annotatorId: string;
   trialItemIds: string[];
   trialValues?: Record<string, AnnotationValue[]>;
+  trialReviewStatus?: TrialReviewStatus;
   unitPrice: number;
   quoteNote: string;
   status: QuoteStatus;

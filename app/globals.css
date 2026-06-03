@@ -267,6 +267,34 @@ textarea {
   align-items: stretch;
 }
 
+.product-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 28px;
+}
+
+.product-hero h1 {
+  margin: 4px 0 8px;
+  font-size: 40px;
+  line-height: 1.1;
+}
+
+.product-hero p {
+  margin: 0;
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.product-hero .primary {
+  min-width: 120px;
+}
+
 .panel {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -771,45 +799,6 @@ textarea {
   white-space: nowrap;
 }
 
-.identity-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  display: grid;
-  place-items: center;
-  background: rgba(19, 27, 46, 0.45);
-  padding: 24px;
-}
-
-.identity-dialog {
-  width: min(760px, 100%);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: white;
-  padding: 28px;
-  box-shadow: 0 24px 80px rgba(19, 27, 46, 0.18);
-}
-
-.identity-option {
-  display: grid;
-  gap: 8px;
-  align-items: start;
-  min-height: 112px;
-  border-radius: 8px;
-  background: var(--surface-low);
-  padding: 18px;
-  text-align: left;
-}
-
-.identity-option strong {
-  color: var(--brand);
-  font-size: 18px;
-}
-
-.identity-option span {
-  color: var(--muted);
-}
-
 .badge.ok {
   background: #e6f4ed;
   color: var(--ok);
@@ -957,6 +946,16 @@ textarea {
 
   .page {
     padding: 24px 16px;
+  }
+
+  .product-hero {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 22px;
+  }
+
+  .product-hero h1 {
+    font-size: 32px;
   }
 
   .search-pill {

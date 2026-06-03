@@ -86,16 +86,16 @@ export default function RequesterDashboardPage() {
     <main className="shell">
       <AppHeader />
       <div className="page grid">
-        <div className="row between">
+        <section className="product-hero">
           <div>
-            <span className="side-kicker">Task Management</span>
-            <h1>任务管理</h1>
-            <p className="muted">管理图像标注任务、报价选择、子任务包进度和抽检验收。</p>
+            <span className="side-kicker">Annota</span>
+            <h1>图标台</h1>
+            <p>从试标到验收，一台搞定。</p>
           </div>
           <Link href="/requester/tasks/new">
             <button className="primary">发布任务</button>
           </Link>
-        </div>
+        </section>
 
         <section className="stats three">
           <StatCard label="正在标注中的任务" value={totals.formal} trend={`${totals.packages} 个子任务包`} icon="▣" />

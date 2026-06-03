@@ -7,17 +7,14 @@ import {
   ensureDemoData,
   getCurrentUserId,
   getUsers,
-  isIdentityConfirmed,
   setCurrentRole,
-  setCurrentUserId,
-  setIdentityConfirmed
+  setCurrentUserId
 } from "@/lib/storage";
 import type { DemoUser, UserRole } from "@/lib/types";
 
 export function AppHeader() {
   const [users, setUsers] = useState<DemoUser[]>([]);
   const [userId, setUserId] = useState("");
-  const [showIdentityModal, setShowIdentityModal] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
@@ -26,7 +23,6 @@ export function AppHeader() {
     ensureDemoData();
     setUsers(getUsers());
     setUserId(getCurrentUserId());
-    setShowIdentityModal(!isIdentityConfirmed());
   }, []);
 
   const current = users.find((user) => user.id === userId);
@@ -38,9 +34,7 @@ export function AppHeader() {
     if (!next) return;
     setCurrentUserId(next.id);
     setCurrentRole(next.role);
-    setIdentityConfirmed(true);
     setUserId(next.id);
-    setShowIdentityModal(false);
     setShowUserMenu(false);
     router.push(roleHref(next.role));
   }
@@ -51,20 +45,18 @@ export function AppHeader() {
 
   const navItems = current?.role === "requester"
     ? [
-        { href: "/requester/dashboard", label: "任务管理", icon: "▦" },
-        { href: "/profile", label: "个人中心", icon: "◉" }
+        { href: "/requester/dashboard", label: "任务管理", icon: "▦" }
       ]
     : [
         { href: "/annotator/tasks", label: "任务大厅", icon: "▤" },
-        { href: "/annotator/tasks/my", label: "我的任务", icon: "▣" },
-        { href: "/profile", label: "个人中心", icon: "◉" }
+        { href: "/annotator/tasks/my", label: "我的任务", icon: "▣" }
       ];
 
   return (
     <>
       <header className="topbar">
-        <Link className="brand" href="/">
-          <strong>AnnotatePro</strong>
+        <Link className="brand" href={current ? roleHref(current.role) : "/requester/dashboard"}>
+          <strong>图标台 Annota</strong>
           <span>{roleTitle} · {current?.name ?? "未选择用户"}</span>
         </Link>
         <div className="top-actions">
@@ -99,24 +91,6 @@ export function AppHeader() {
           </div>
         </div>
       </header>
-
-      {showIdentityModal ? (
-        <div className="identity-backdrop">
-          <div className="identity-dialog">
-            <span className="side-kicker">Choose Workspace</span>
-            <h2>选择你的平台身份</h2>
-            <p className="muted">进入后左侧目录只展示当前身份可操作的内容。后续可在个人中心切换身份。</p>
-            <div className="grid two">
-              {users.map((user) => (
-                <button key={user.id} className="identity-option" onClick={() => switchUser(user.id)}>
-                  <strong>{user.name}</strong>
-                  <span>{user.role === "requester" ? "发布任务、报价选择、抽检验收" : "试标报价、正式标注、申诉处理"}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      ) : null}
     </>
   );
 }

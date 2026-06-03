@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "图像标注平台 MVP",
-  description: "基于 localStorage 的图像标注服务平台 MVP"
+  title: "图标台 Annota",
+  description: "从试标到验收，一台搞定。"
 };
 
 export default function RootLayout({

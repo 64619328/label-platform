@@ -87,7 +87,7 @@ export function updateTaskFromInput(existing: Task, input: DraftTaskInput, publi
 
 export function selectQuote(task: Task, quoteId: string): Task {
   const quote = task.quotes.find((item) => item.id === quoteId);
-  if (!quote) return task;
+  if (!quote || quote.trialReviewStatus !== "approved") return task;
   return {
     ...task,
     stage: "formal",
@@ -98,6 +98,21 @@ export function selectQuote(task: Task, quoteId: string): Task {
       ...item,
       status: item.id === quoteId ? "selected" : "not_selected"
     })),
+    updatedAt: nowIso()
+  };
+}
+
+export function reviewTrialQuote(task: Task, quoteId: string, trialReviewStatus: "approved" | "rejected"): Task {
+  return {
+    ...task,
+    quotes: task.quotes.map((quote) =>
+      quote.id === quoteId
+        ? {
+            ...quote,
+            trialReviewStatus
+          }
+        : quote
+    ),
     updatedAt: nowIso()
   };
 }
@@ -119,6 +134,7 @@ export function submitQuote(task: Task, annotatorId: string, unitPrice: number, 
     annotatorId,
     trialItemIds: trialItems.map((item) => item.id),
     trialValues,
+    trialReviewStatus: "pending" as const,
     unitPrice,
     quoteNote,
     status: "submitted" as const,
