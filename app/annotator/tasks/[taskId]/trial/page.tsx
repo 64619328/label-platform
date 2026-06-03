@@ -64,25 +64,30 @@ export default function TrialPage() {
   return (
     <main className="shell">
       <AppHeader />
-      <div className="page grid">
-        <div className="row between">
+      <div className="page page-wide grid">
+        <div className="detail-hero">
           <div>
             <h1>试标工作台</h1>
             <p className="muted">{task.title}</p>
           </div>
-          <Link href="/annotator/tasks">
-            <button>返回任务大厅</button>
-          </Link>
+          <div className="market-task-actions">
+            <Link href="/annotator/tasks">
+              <button>返回任务大厅</button>
+            </Link>
+          </div>
         </div>
         {message ? <div className="panel">{message}</div> : null}
         {current ? (
           <section className="grid two">
             <div className="panel grid">
               <div className="row between">
-                <h2>
-                  试标数据 {active + 1} / {task.trialItems.length}
-                </h2>
-                <span className="badge">{current.id}</span>
+                <div>
+                  <span className="market-task-id">试标编号 TR-{String(active + 1).padStart(3, "0")}</span>
+                  <h2>
+                    试标数据 {active + 1} / {task.trialItems.length}
+                  </h2>
+                </div>
+                <span className="badge">{isComplete(values[current.id] ?? current.annotationValues ?? [], task.labelConfigs) ? "已完成" : "待填写"}</span>
               </div>
               <ImageViewer imageUrls={current.imageUrls} displayConfig={task.displayConfig} />
               <SourceDataMeta item={current} />

@@ -8,7 +8,7 @@ import { ImageViewer } from "@/components/ImageViewer";
 import { isComplete, LabelForm } from "@/components/LabelForm";
 import { SourceDataMeta } from "@/components/SourceDataMeta";
 import { PackageBadge } from "@/components/TaskMeta";
-import { issueTypeLabels } from "@/lib/labels";
+import { annotationReviewStatusLabels, issueTypeLabels, statusBadgeClass } from "@/lib/labels";
 import { getCurrentUser, getTasks, saveTasks } from "@/lib/storage";
 import { appealItem, ensurePackages, submitPackage, updateFormalItem } from "@/lib/task-actions";
 import type { AnnotationValue, Task } from "@/lib/types";
@@ -87,15 +87,17 @@ export default function WorkspacePage() {
   return (
     <main className="shell">
       <AppHeader />
-      <div className="page grid">
-        <div className="row between">
+      <div className="page page-wide grid">
+        <div className="detail-hero">
           <div>
             <h1>正式标注工作台</h1>
             <p className="muted">{task.title}</p>
           </div>
-          <Link href="/annotator/tasks">
-            <button>返回任务大厅</button>
-          </Link>
+          <div className="market-task-actions">
+            <Link href="/annotator/tasks">
+              <button>返回任务大厅</button>
+            </Link>
+          </div>
         </div>
         {message ? <div className="panel">{message}</div> : null}
         {task.status === "cancelled" ? <div className="panel">任务已中止，只能查看历史结果。</div> : null}
@@ -123,8 +125,8 @@ export default function WorkspacePage() {
           </div>
           <div className="row" style={{ marginTop: 12 }}>
             {myPackages.map((pkg) => (
-              <button key={pkg.id} className={pkg.id === packageItem?.id ? "primary" : ""} onClick={() => setSelectedPackageId(pkg.id)}>
-                {pkg.id.slice(-6)} · {pkg.itemIds.length} 条 · <PackageBadge pkg={pkg} />
+              <button key={pkg.id} className={pkg.id === packageItem?.id ? "primary package-tab" : "package-tab"} onClick={() => setSelectedPackageId(pkg.id)}>
+                包 {pkg.id.slice(-6).toUpperCase()} · {pkg.itemIds.length} 条 · <PackageBadge pkg={pkg} />
               </button>
             ))}
           </div>
@@ -138,8 +140,8 @@ export default function WorkspacePage() {
                 {packageItems.map((item, index) => (
                   <button key={item.id} className={item.id === activeItem.id ? "item active" : "item"} onClick={() => setActiveItemId(item.id)}>
                     <div className="row between">
-                      <strong>数据 {index + 1}</strong>
-                      <span className="badge">{item.reviewStatus}</span>
+                      <strong>数据 A-{String(index + 1).padStart(3, "0")}</strong>
+                      <span className={statusBadgeClass(item.reviewStatus)}>{annotationReviewStatusLabels[item.reviewStatus]}</span>
                     </div>
                     {item.rejectionReason ? (
                       <div className="muted">
@@ -157,8 +159,11 @@ export default function WorkspacePage() {
             <div className="grid">
               <div className="panel grid">
                 <div className="row between">
-                  <h2>{activeItem.id}</h2>
-                  <span className="badge">{activeItem.reviewStatus}</span>
+                  <div>
+                    <span className="market-task-id">数据编号 {activeItem.id}</span>
+                    <h2>{activeItem.id}</h2>
+                  </div>
+                  <span className={statusBadgeClass(activeItem.reviewStatus)}>{annotationReviewStatusLabels[activeItem.reviewStatus]}</span>
                 </div>
                 <ImageViewer imageUrls={activeItem.imageUrls} displayConfig={task.displayConfig} />
                 <SourceDataMeta item={activeItem} />

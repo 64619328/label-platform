@@ -3,12 +3,19 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AppHeader } from "@/components/AppHeader";
-import { PackageBadge, TaskMeta } from "@/components/TaskMeta";
-import { taskStatusLabels } from "@/lib/labels";
+import { PackageBadge } from "@/components/TaskMeta";
+import { statusBadgeClass, taskStatusLabels } from "@/lib/labels";
 import { getCurrentUser, getTasks } from "@/lib/storage";
 import { taskStats } from "@/lib/task-actions";
 import type { Task } from "@/lib/types";
-import { money } from "@/lib/utils";
+import { formatDate, money } from "@/lib/utils";
+
+const quoteStatusLabels = {
+  draft: "草稿",
+  submitted: "已提交",
+  selected: "已选择",
+  not_selected: "未选择"
+} as const;
 
 export default function MyAnnotatorTasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -31,12 +38,12 @@ export default function MyAnnotatorTasksPage() {
   return (
     <main className="shell">
       <AppHeader />
-      <div className="page grid">
+      <div className="page page-wide grid">
         <div className="row between">
           <div>
             <span className="side-kicker">Annotator Dashboard</span>
             <h1>我的任务</h1>
-            <p className="muted">查看当前标注方已领取、已报价、中标或被指定的任务。</p>
+            <p className="muted">查看已领取、已报价、中标或被指定的任务。</p>
           </div>
           <Link href="/annotator/tasks">
             <button>返回任务大厅</button>
@@ -58,29 +65,36 @@ export default function MyAnnotatorTasksPage() {
             <div className="empty">暂无我的任务</div>
           ) : (
             <div className="my-task-rows">
-              {myTasks.map((task) => {
+              {myTasks.map((task, index) => {
                 const packages = task.packages.filter((pkg) => pkg.annotatorId === currentUser.id);
                 const progress = task.formalItems.length
                   ? Math.round((task.formalItems.filter((item) => item.annotationValues?.length).length / task.formalItems.length) * 100)
                   : 0;
                 const canWork = task.selectedAnnotatorId === currentUser.id && task.status !== "cancelled";
                 const quote = task.quotes.find((item) => item.annotatorId === currentUser.id);
+                const imageUrl = task.formalItems[0]?.imageUrls[0] ?? task.trialItems[0]?.imageUrls[0];
 
                 return (
                   <article className="my-task-row" key={task.id}>
                     <div className="my-task-thumb">
-                      {task.formalItems[0]?.imageUrls[0] || task.trialItems[0]?.imageUrls[0] ? (
-                        <img src={task.formalItems[0]?.imageUrls[0] ?? task.trialItems[0]?.imageUrls[0]} alt="" />
+                      {imageUrl ? (
+                        <img src={imageUrl} alt="" />
                       ) : null}
                     </div>
                     <div className="my-task-main">
-                      <div className="row">
-                        <span className="badge">{taskStatusLabels[task.status]}</span>
-                        <span className="mono">#{task.id.slice(-8).toUpperCase()}</span>
+                      <div className="market-task-title">
+                        <div>
+                          <span className="market-task-id">任务编号 M-{String(index + 1).padStart(3, "0")}</span>
+                          <h2>{task.title}</h2>
+                        </div>
+                        <span className={statusBadgeClass(task.status)}>{taskStatusLabels[task.status]}</span>
                       </div>
-                      <h2>{task.title}</h2>
-                      <TaskMeta task={task} />
-                      {quote ? <span className="badge warn">我的报价 {money(quote.unitPrice)} · {quote.status}</span> : null}
+                      <div className="market-task-meta">
+                        <span className="badge">截止 {formatDate(task.deadline)}</span>
+                        <span className="badge">正式数据 {task.formalItems.length} 条</span>
+                        <span className="badge">单价 {money(task.quotedUnitPrice ?? task.manualUnitPrice ?? 0)}</span>
+                        {quote ? <span className="badge warn">我的报价 {money(quote.unitPrice)} · {quoteStatusLabels[quote.status]}</span> : null}
+                      </div>
                       {packages.length ? (
                         <div className="row">
                           {packages.map((pkg) => (
@@ -95,7 +109,7 @@ export default function MyAnnotatorTasksPage() {
                       <div className="mini-progress">
                         <span style={{ width: `${progress}%` }} />
                       </div>
-                      <div className="row">
+                      <div className="market-task-actions">
                         <Link href={`/annotator/tasks/${task.id}`}>
                           <button>查看详情</button>
                         </Link>

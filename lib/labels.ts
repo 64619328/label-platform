@@ -1,4 +1,4 @@
-import type { RejectionIssueType, TaskStatus, PackageStatus } from "./types";
+import type { AnnotationReviewStatus, RejectionIssueType, TaskStatus, PackageStatus } from "./types";
 
 export const taskStatusLabels: Record<TaskStatus, string> = {
   draft: "草稿",
@@ -20,6 +20,14 @@ export const packageStatusLabels: Record<PackageStatus, string> = {
   partially_rejected: "部分驳回"
 };
 
+export const annotationReviewStatusLabels: Record<AnnotationReviewStatus, string> = {
+  not_submitted: "未提交",
+  pending_review: "待验收",
+  approved: "已通过",
+  rejected: "已驳回",
+  appealed: "已申诉"
+};
+
 export const issueTypeLabels: Record<RejectionIssueType, string> = {
   label_error: "标签错误",
   image_unclear: "图片无法判断",
@@ -28,9 +36,9 @@ export const issueTypeLabels: Record<RejectionIssueType, string> = {
   other: "其他"
 };
 
-export function statusBadgeClass(status: TaskStatus | PackageStatus) {
+export function statusBadgeClass(status: TaskStatus | PackageStatus | AnnotationReviewStatus) {
   if (status === "completed" || status === "approved") return "badge ok";
-  if (status === "cancelled" || status === "partially_rejected") return "badge danger";
-  if (status === "pending_review" || status === "pending_quote_selection") return "badge warn";
+  if (status === "cancelled" || status === "partially_rejected" || status === "rejected") return "badge danger";
+  if (status === "pending_review" || status === "pending_quote_selection" || status === "appealed") return "badge warn";
   return "badge";
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   ensureDemoData,
@@ -16,7 +16,6 @@ export function AppHeader() {
   const [users, setUsers] = useState<DemoUser[]>([]);
   const [userId, setUserId] = useState("");
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const pathname = usePathname();
   const router = useRouter();
 
   useEffect(() => {
@@ -26,8 +25,7 @@ export function AppHeader() {
   }, []);
 
   const current = users.find((user) => user.id === userId);
-  const isRequester = current?.role === "requester";
-  const roleTitle = isRequester ? "需求方工作台" : "标注方工作台";
+  const displayName = current?.role === "requester" ? "需求方" : current?.role === "annotator" ? "标注方" : "未选择用户";
 
   function switchUser(nextId: string) {
     const next = users.find((user) => user.id === nextId);
@@ -43,39 +41,23 @@ export function AppHeader() {
     return role === "requester" ? "/requester/dashboard" : "/annotator/tasks";
   }
 
-  const navItems = current?.role === "requester"
-    ? [
-        { href: "/requester/dashboard", label: "任务管理", icon: "▦" }
-      ]
-    : [
-        { href: "/annotator/tasks", label: "任务大厅", icon: "▤" },
-        { href: "/annotator/tasks/my", label: "我的任务", icon: "▣" }
-      ];
-
   return (
     <>
       <header className="topbar">
         <Link className="brand" href={current ? roleHref(current.role) : "/requester/dashboard"}>
-          <strong>图标台 Annota</strong>
-          <span>{roleTitle} · {current?.name ?? "未选择用户"}</span>
+          <strong>图标台</strong>
+          <span>Annota</span>
         </Link>
         <div className="top-actions">
           <span className="search-box">
             <span>⌕</span>
-            <input placeholder="Search across all task instances..." />
+            <input placeholder="Search tasks" />
           </span>
-          <nav className="top-nav">
-            {navItems.map((item) => (
-              <Link key={item.href} className={pathname === item.href ? "top-link active" : "top-link"} href={item.href}>
-                {item.label}
-              </Link>
-            ))}
-          </nav>
           <button className="icon-button" title="通知">●</button>
           <div className="user-menu-wrap">
             <button className="user-trigger" onClick={() => setShowUserMenu(!showUserMenu)}>
-              <span className="avatar">{current?.name.slice(-1) ?? "?"}</span>
-              <span>{current?.name ?? "未选择用户"}</span>
+              <span className="avatar">{displayName.slice(0, 1)}</span>
+              <span>{displayName}</span>
             </button>
             {showUserMenu ? (
               <div className="user-menu">

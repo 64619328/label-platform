@@ -60,7 +60,9 @@ export function resetWithDemoData() {
 }
 
 export function getUsers() {
-  return readJson<DemoUser[]>(STORAGE_KEYS.DEMO_USERS, demoUsers);
+  return readJson<DemoUser[]>(STORAGE_KEYS.DEMO_USERS, demoUsers).map((user) =>
+    user.id === "requester_1" ? { ...user, name: "需求方" } : user
+  );
 }
 
 export function getTasks() {

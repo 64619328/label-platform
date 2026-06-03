@@ -2,7 +2,7 @@ import type { AnnotationItem, DemoUser, LabelConfig, Task } from "./types";
 import { nowIso } from "./utils";
 
 export const demoUsers: DemoUser[] = [
-  { id: "requester_1", role: "requester", name: "需求方 · 数据团队" },
+  { id: "requester_1", role: "requester", name: "需求方" },
   { id: "annotator_a", role: "annotator", name: "标注方 A" },
   { id: "annotator_b", role: "annotator", name: "标注方 B" },
   { id: "annotator_c", role: "annotator", name: "标注方 C" }

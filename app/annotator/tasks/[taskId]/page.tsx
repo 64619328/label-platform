@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AppHeader } from "@/components/AppHeader";
-import { TaskMeta } from "@/components/TaskMeta";
+import { statusBadgeClass, taskStatusLabels } from "@/lib/labels";
 import { getCurrentUser, getTasks } from "@/lib/storage";
 import type { Task } from "@/lib/types";
+import { formatDate, money } from "@/lib/utils";
 
 export default function AnnotatorTaskDetailPage() {
   const params = useParams<{ taskId: string }>();
@@ -32,15 +33,34 @@ export default function AnnotatorTaskDetailPage() {
   return (
     <main className="shell">
       <AppHeader />
-      <div className="page grid">
-        <div className="row between">
+      <div className="page page-wide grid">
+        <div className="detail-hero">
           <div>
+            <span className="market-task-id">任务编号 {task.id}</span>
             <h1>{task.title}</h1>
-            <TaskMeta task={task} />
+            <div className="market-task-meta">
+              <span className={statusBadgeClass(task.status)}>{taskStatusLabels[task.status]}</span>
+              <span className="badge">截止 {formatDate(task.deadline)}</span>
+              <span className="badge">试标 {task.trialItems.length} 条</span>
+              <span className="badge">正式数据 {task.formalItems.length} 条</span>
+              <span className="badge">单价 {money(task.quotedUnitPrice ?? task.manualUnitPrice ?? 0)}</span>
+            </div>
           </div>
-          <Link href="/annotator/tasks">
-            <button>返回任务大厅</button>
-          </Link>
+          <div className="market-task-actions">
+            <Link href="/annotator/tasks">
+              <button>返回任务大厅</button>
+            </Link>
+            {canTrial ? (
+              <Link href={`/annotator/tasks/${task.id}/trial`}>
+                <button className="primary">进入试标</button>
+              </Link>
+            ) : null}
+            {canWork ? (
+              <Link href={`/annotator/tasks/${task.id}/workspace`}>
+                <button className="primary">进入标注</button>
+              </Link>
+            ) : null}
+          </div>
         </div>
         <section className="grid two">
           <div className="panel">
@@ -78,18 +98,6 @@ export default function AnnotatorTaskDetailPage() {
             ))}
           </div>
         </section>
-        <div className="row">
-          {canTrial ? (
-            <Link href={`/annotator/tasks/${task.id}/trial`}>
-              <button className="primary">进入试标工作台</button>
-            </Link>
-          ) : null}
-          {canWork ? (
-            <Link href={`/annotator/tasks/${task.id}/workspace`}>
-              <button className="primary">进入正式标注工作台</button>
-            </Link>
-          ) : null}
-        </div>
       </div>
     </main>
   );
