@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { AppHeader } from "@/components/AppHeader";
+import { AnnotatorShell } from "@/components/AnnotatorShell";
 import { statusBadgeClass, taskStatusLabels } from "@/lib/labels";
 import { getCurrentUser, getTasks } from "@/lib/storage";
 import type { Task } from "@/lib/types";
@@ -20,10 +20,9 @@ export default function AnnotatorTaskDetailPage() {
   const currentUser = getCurrentUser();
   if (!task) {
     return (
-      <main className="shell">
-        <AppHeader />
+      <AnnotatorShell title="任务详情">
         <div className="page empty">任务不存在</div>
-      </main>
+      </AnnotatorShell>
     );
   }
 
@@ -31,8 +30,7 @@ export default function AnnotatorTaskDetailPage() {
   const canWork = task.selectedAnnotatorId === currentUser.id && task.status !== "cancelled";
 
   return (
-    <main className="shell">
-      <AppHeader />
+    <AnnotatorShell title="任务详情">
       <div className="page page-wide grid">
         <div className="detail-hero">
           <div>
@@ -47,9 +45,6 @@ export default function AnnotatorTaskDetailPage() {
             </div>
           </div>
           <div className="market-task-actions">
-            <Link href="/annotator/tasks">
-              <button>返回任务大厅</button>
-            </Link>
             {canTrial ? (
               <Link href={`/annotator/tasks/${task.id}/trial`}>
                 <button className="primary">进入试标</button>
@@ -99,6 +94,6 @@ export default function AnnotatorTaskDetailPage() {
           </div>
         </section>
       </div>
-    </main>
+    </AnnotatorShell>
   );
 }

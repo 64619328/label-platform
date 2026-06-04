@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { AppHeader } from "@/components/AppHeader";
+import { RequesterShell } from "@/components/RequesterShell";
 import { RequesterTaskDetail } from "@/components/RequesterTaskDetail";
+import { ReviewBatchDialog } from "@/components/ReviewBatchDialog";
 import { statusBadgeClass, taskStatusLabels } from "@/lib/labels";
 import { getCurrentUser, getTasks, getUsers, saveTasks } from "@/lib/storage";
 import { buildDownloadData, taskStats } from "@/lib/task-actions";
@@ -19,6 +20,7 @@ export default function RequesterDashboardPage() {
   const [selectedId, setSelectedId] = useState("");
   const [filter, setFilter] = useState<TaskFilter>("attention");
   const [query, setQuery] = useState("");
+  const [reviewTaskId, setReviewTaskId] = useState("");
 
   useEffect(() => {
     const loaded = getTasks();
@@ -30,6 +32,7 @@ export default function RequesterDashboardPage() {
   const currentUser = getCurrentUser();
   const requesterTasks = tasks.filter((task) => task.requesterId === currentUser.id);
   const selected = requesterTasks.find((task) => task.id === selectedId);
+  const reviewTask = requesterTasks.find((task) => task.id === reviewTaskId);
 
   const totals = useMemo(() => {
     const allStats = requesterTasks.map(taskStats);
@@ -94,6 +97,11 @@ export default function RequesterDashboardPage() {
     { label: "已中止", value: "cancelled", count: totals.cancelled }
   ];
 
+  const heroImages = requesterTasks
+    .flatMap((task) => [...task.formalItems, ...task.trialItems].flatMap((item) => item.imageUrls))
+    .filter(Boolean)
+    .slice(0, 4);
+
   const supplierDistribution = useMemo(() => {
     const map = new Map<string, number>();
     requesterTasks.forEach((task) => {
@@ -111,7 +119,7 @@ export default function RequesterDashboardPage() {
   const maxSupplierCount = Math.max(1, ...supplierDistribution.map((item) => item.count));
   const healthStatus = totals.review > 3 || requesterTasks.some((task) => task.status === "partially_rejected")
     ? "需要关注"
-    : "Optimal";
+    : "健康";
 
   function persist(nextTask: Task) {
     const next = tasks.map((task) => (task.id === nextTask.id ? nextTask : task));
@@ -135,19 +143,31 @@ export default function RequesterDashboardPage() {
   }
 
   return (
-    <main className="shell">
-      <AppHeader />
+    <RequesterShell title="任务管理">
       <div className="page page-wide grid">
         <section className="ops-hero">
           <div className="ops-hero-main">
             <span className="side-kicker">Annota Workbench</span>
             <h1>图标台</h1>
             <p>从试标到验收，一台搞定。</p>
+            <div className="hero-action-row">
+              <Link href="/requester/tasks/new">
+                <button className="primary">发布任务</button>
+              </Link>
+              <Link href="/requester/review">
+                <button>查看验收</button>
+              </Link>
+            </div>
+            <div className="hero-signal-row">
+              <span className="badge">试标报价</span>
+              <span className="badge">子任务包抽检</span>
+              <span className="badge">JSON 下载</span>
+            </div>
           </div>
-          <div className="ops-hero-actions">
-            <Link href="/requester/tasks/new">
-              <button className="primary">发布任务</button>
-            </Link>
+          <div className="hero-photo-grid" aria-hidden="true">
+            {heroImages.map((imageUrl, index) => (
+              <img key={`${imageUrl}-${index}`} src={imageUrl} alt="" />
+            ))}
           </div>
         </section>
 
@@ -227,6 +247,19 @@ export default function RequesterDashboardPage() {
                             <Link href={`/requester/tasks/${task.id}`} onClick={(event) => event.stopPropagation()}>
                               <button className="button-compact" title="任务详情">详情</button>
                             </Link>
+                            {task.status === "pending_review" || task.status === "partially_rejected" ? (
+                              <button
+                                className="button-compact primary"
+                                title="验收任务"
+                                disabled={!task.packages.some((pkg) => pkg.status === "pending_review")}
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  setReviewTaskId(task.id);
+                                }}
+                              >
+                                验收
+                              </button>
+                            ) : null}
                             <button
                               className="button-compact"
                               title="下载 JSON"
@@ -262,12 +295,12 @@ export default function RequesterDashboardPage() {
                 ) : null}
               </tbody>
             </table>
-            <div className="row between" style={{ padding: "14px 18px", background: "var(--surface-low)" }}>
-              <span className="muted">Showing {filteredTasks.length} of {totals.total} tasks</span>
+            <div className="row between task-table-footer">
+              <span className="muted">当前展示 {filteredTasks.length} / {totals.total} 个任务</span>
               <div className="row">
-                <button>Previous</button>
+                <button>上一页</button>
                 <button className="active-page">1</button>
-                <button>Next</button>
+                <button>下一页</button>
               </div>
             </div>
           </div>
@@ -297,7 +330,9 @@ export default function RequesterDashboardPage() {
           </div>
         </section>
 
+        {reviewTask ? <ReviewBatchDialog task={reviewTask} currentUserId={currentUser.id} onTaskChange={persist} onClose={() => setReviewTaskId("")} /> : null}
+
       </div>
-    </main>
+    </RequesterShell>
   );
 }

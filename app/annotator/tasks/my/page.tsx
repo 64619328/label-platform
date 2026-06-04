@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { AppHeader } from "@/components/AppHeader";
+import { AnnotatorShell } from "@/components/AnnotatorShell";
 import { PackageBadge } from "@/components/TaskMeta";
 import { statusBadgeClass, taskStatusLabels } from "@/lib/labels";
 import { getCurrentUser, getTasks } from "@/lib/storage";
@@ -36,20 +36,8 @@ export default function MyAnnotatorTasksPage() {
   const amount = myTasks.reduce((sum, task) => sum + (task.selectedAnnotatorId === currentUser.id ? taskStats(task).amount : 0), 0);
 
   return (
-    <main className="shell">
-      <AppHeader />
+    <AnnotatorShell title="正式任务">
       <div className="page page-wide grid">
-        <div className="row between">
-          <div>
-            <span className="side-kicker">Annotator Dashboard</span>
-            <h1>我的任务</h1>
-            <p className="muted">查看已领取、已报价、中标或被指定的任务。</p>
-          </div>
-          <Link href="/annotator/tasks">
-            <button>返回任务大厅</button>
-          </Link>
-        </div>
-
         <section className="stats three">
           <Stat label="进行中任务" value={activeTasks.length} />
           <Stat label="我的任务包" value={packageCount} />
@@ -62,7 +50,7 @@ export default function MyAnnotatorTasksPage() {
             <span className="muted">{myTasks.length} 个任务</span>
           </div>
           {myTasks.length === 0 ? (
-            <div className="empty">暂无我的任务</div>
+            <div className="empty">暂无正式任务</div>
           ) : (
             <div className="my-task-rows">
               {myTasks.map((task, index) => {
@@ -127,7 +115,7 @@ export default function MyAnnotatorTasksPage() {
           )}
         </section>
       </div>
-    </main>
+    </AnnotatorShell>
   );
 }
 

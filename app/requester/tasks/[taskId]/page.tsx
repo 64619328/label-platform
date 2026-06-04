@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { AppHeader } from "@/components/AppHeader";
+import { RequesterShell } from "@/components/RequesterShell";
 import { RequesterTaskDetail } from "@/components/RequesterTaskDetail";
 import { ensureDemoData, getCurrentUser, getTasks, getUsers, saveTasks } from "@/lib/storage";
 import type { Task } from "@/lib/types";
@@ -30,8 +30,7 @@ export default function RequesterTaskDetailPage() {
   }
 
   return (
-    <main className="shell">
-      <AppHeader />
+    <RequesterShell title="任务详情">
       <div className="page grid">
         <div className="row between">
           <div>
@@ -50,6 +49,6 @@ export default function RequesterTaskDetailPage() {
           <div className="empty">未找到任务，或当前身份无权查看该任务。</div>
         ) : null}
       </div>
-    </main>
+    </RequesterShell>
   );
 }

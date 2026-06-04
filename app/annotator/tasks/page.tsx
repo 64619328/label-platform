@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { AppHeader } from "@/components/AppHeader";
+import { AnnotatorShell } from "@/components/AnnotatorShell";
 import { statusBadgeClass, taskStatusLabels } from "@/lib/labels";
 import { getCurrentUser, getTasks } from "@/lib/storage";
 import type { Task } from "@/lib/types";
@@ -40,21 +40,8 @@ export default function AnnotatorTasksPage() {
   };
 
   return (
-    <main className="shell">
-      <AppHeader />
+    <AnnotatorShell title="任务大厅">
       <div className="page page-wide grid">
-        <div>
-          <div className="row between">
-            <div>
-              <span className="side-kicker">Task Marketplace</span>
-              <h1>任务大厅</h1>
-              <p className="muted">这里展示可以领取或试标的任务。当前身份不能发布任务。</p>
-            </div>
-            <Link href="/annotator/tasks/my">
-              <button className="primary">我的任务</button>
-            </Link>
-          </div>
-        </div>
         <section className="stats">
           <Stat label="可领取任务" value={stats.available} />
           <Stat label="试标报价任务" value={stats.trial} />
@@ -120,7 +107,7 @@ export default function AnnotatorTasksPage() {
           )}
         </section>
       </div>
-    </main>
+    </AnnotatorShell>
   );
 }
 

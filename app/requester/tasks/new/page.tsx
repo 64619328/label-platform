@@ -1,8 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { AppHeader } from "@/components/AppHeader";
+import { RequesterShell } from "@/components/RequesterShell";
 import { defaultLabelConfigs } from "@/lib/demo-data";
 import { getCurrentUser, getTasks, getUsers, saveTasks } from "@/lib/storage";
 import { createTaskFromInput, updateTaskFromInput } from "@/lib/task-actions";
@@ -200,19 +199,8 @@ export default function NewTaskPage() {
   }
 
   return (
-    <main className="shell">
-      <AppHeader />
+    <RequesterShell title={editId ? "编辑任务草稿" : "发布任务"}>
       <div className="page grid">
-        <div className="row between">
-          <div>
-            <h1>{editId ? "编辑任务草稿" : "发布图像标注任务"}</h1>
-            <p className="muted">按任务配置、数据与流程、展示配置、标签配置四步完成发布。</p>
-          </div>
-          <Link href="/requester/dashboard">
-            <button>返回工作台</button>
-          </Link>
-        </div>
-
         {message ? <div className="panel">{message}</div> : null}
 
         <section className="task-wizard">
@@ -451,6 +439,6 @@ export default function NewTaskPage() {
           </div>
         </div>
       </div>
-    </main>
+    </RequesterShell>
   );
 }

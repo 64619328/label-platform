@@ -5,6 +5,7 @@ import type {
   DraftTaskInput,
   LabelConfig,
   RejectionIssueType,
+  ReviewBatch,
   ReviewSamplingMode,
   Task
 } from "./types";
@@ -282,6 +283,21 @@ export function createReviewBatch(
   };
 }
 
+export function createReviewBatchWithResult(
+  task: Task,
+  packageId: string,
+  samplingMode: ReviewSamplingMode,
+  operatorId: string,
+  sampleCount: number,
+  manualItemIds: string[] = [],
+  labelConfigId?: string,
+  labelOptionIds: string[] = []
+): { task: Task; batch?: ReviewBatch } {
+  const nextTask = createReviewBatch(task, packageId, samplingMode, operatorId, sampleCount, manualItemIds, labelConfigId, labelOptionIds);
+  const newBatch = nextTask.reviewBatches.find((batch) => !task.reviewBatches.some((existing) => existing.id === batch.id));
+  return { task: nextTask, batch: newBatch };
+}
+
 export function approveReviewItem(task: Task, batchId: string, itemId: string): Task {
   const currentItem = task.formalItems.find((item) => item.id === itemId);
   const alreadyApproved = currentItem?.reviewStatus === "approved";
@@ -303,6 +319,20 @@ export function approveReviewItem(task: Task, batchId: string, itemId: string): 
     ),
     updatedAt: nowIso()
   };
+}
+
+export function approveReviewItemAndMaybePackage(task: Task, batchId: string, itemId: string): Task {
+  const nextTask = approveReviewItem(task, batchId, itemId);
+  const batch = nextTask.reviewBatches.find((item) => item.id === batchId);
+  if (!batch) return nextTask;
+  const allSampledApproved = batch.sampledItemIds.every((sampledItemId) =>
+    nextTask.formalItems.find((item) => item.id === sampledItemId)?.reviewStatus === "approved"
+  );
+  const packageItem = nextTask.packages.find((pkg) => pkg.id === batch.packageId);
+  if (!allSampledApproved || packageItem?.status === "approved" || packageItem?.status === "partially_rejected") {
+    return nextTask;
+  }
+  return approvePackage(nextTask, batch.packageId);
 }
 
 export function approveAllPendingReviewPackages(task: Task): Task {
