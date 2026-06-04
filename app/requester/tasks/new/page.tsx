@@ -194,16 +194,58 @@ export default function NewTaskPage() {
     return null;
   }
 
+  function validateStep(step: number): ValidationError | null {
+    if (step === 0) {
+      if (creationMode === "from_history" && !historyTaskId) return { step: 0, field: "historyTaskId", message: "请选择历史任务" };
+      if (!title.trim()) return { step: 0, field: "title", message: "请填写任务名称" };
+    }
+    if (step === 1) {
+      if (!imageRows.trim()) return { step: 1, field: "imageRows", message: "请填写图片 URL 或 JSON 数据" };
+      if (parseImageRows(imageRows).length === 0) return { step: 1, field: "imageRows", message: "请填写有效数据：支持图片 URL 行，或每行包含 imageName 字段的 JSON" };
+      if (entryMode === "trial_quote" && trialSampleSize <= 0) return { step: 1, field: "trialSampleSize", message: "请填写大于 0 的试标数据条数" };
+    }
+    if (step === 3) {
+      for (const [configIndex, config] of labelConfigs.entries()) {
+        if (!config.title.trim()) return { step: 3, field: `label-title-${configIndex}`, message: `请填写第 ${configIndex + 1} 个问题组标题` };
+        if (config.options.length === 0) return { step: 3, field: `label-options-${configIndex}`, message: `第 ${configIndex + 1} 个问题组需要至少一个选项` };
+        for (const [optionIndex, option] of config.options.entries()) {
+          if (!option.label.trim()) return { step: 3, field: `option-label-${configIndex}-${optionIndex}`, message: `请填写第 ${configIndex + 1} 个问题组第 ${optionIndex + 1} 个选项名称` };
+          if (!option.criteria.trim()) return { step: 3, field: `option-criteria-${configIndex}-${optionIndex}`, message: `请填写第 ${configIndex + 1} 个问题组第 ${optionIndex + 1} 个判断依据` };
+        }
+      }
+    }
+    return null;
+  }
+
+  function focusError(error = validationError) {
+    if (!error) return;
+    window.setTimeout(() => {
+      const target = document.querySelector(`[data-error-field="${error.field}"]`) ?? document.querySelector(".validation-alert");
+      target?.scrollIntoView({ block: "center", behavior: "smooth" });
+    }, 80);
+  }
+
+  function setError(error: ValidationError) {
+    setMessage("");
+    setValidationError(error);
+    setActiveStep(error.step);
+    focusError(error);
+  }
+
+  function goNext() {
+    const error = validateStep(activeStep);
+    if (error) {
+      setError(error);
+      return;
+    }
+    setValidationError(null);
+    setActiveStep((step) => Math.min(steps.length - 1, step + 1));
+  }
+
   function save(publish: boolean) {
     const error = validate(publish);
     if (error) {
-      setMessage("");
-      setValidationError(error);
-      setActiveStep(error.step);
-      window.setTimeout(() => {
-        const target = document.querySelector(`[data-error-field="${error.field}"]`) ?? document.querySelector(".validation-alert");
-        target?.scrollIntoView({ block: "center", behavior: "smooth" });
-      }, 80);
+      setError(error);
       return;
     }
     setValidationError(null);
@@ -238,6 +280,15 @@ export default function NewTaskPage() {
     <RequesterShell title={editId ? "编辑任务草稿" : "发布任务"}>
       <div className="page grid">
         {message ? <div className="panel">{message}</div> : null}
+        {validationError ? (
+          <div className="validation-alert task-form-alert" role="alert">
+            <div>
+              <strong>无法继续</strong>
+              <span>{validationError.message}</span>
+            </div>
+            <button onClick={() => focusError()}>定位到错误项</button>
+          </div>
+        ) : null}
 
         <section className="task-wizard">
           <div className="wizard-steps">
@@ -468,18 +519,12 @@ export default function NewTaskPage() {
         </section>
 
         <div className="save-action-zone">
-          {validationError ? (
-            <div className="validation-alert" role="alert">
-              <strong>无法继续</strong>
-              <span>{validationError.message}</span>
-            </div>
-          ) : null}
           <div className="row between">
             <div className="row">
               <button disabled={activeStep === 0} onClick={() => setActiveStep((step) => Math.max(0, step - 1))}>
                 上一步
               </button>
-              <button disabled={activeStep === steps.length - 1} onClick={() => setActiveStep((step) => Math.min(steps.length - 1, step + 1))}>
+              <button disabled={activeStep === steps.length - 1} onClick={goNext}>
                 下一步
               </button>
             </div>

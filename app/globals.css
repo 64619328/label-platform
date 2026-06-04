@@ -3117,7 +3117,24 @@ select:focus {
 }
 
 .requester-shell .ops-hero {
-  min-height: 300px;
+  grid-template-columns: minmax(0, 0.95fr) minmax(320px, 0.65fr);
+  min-height: 260px;
+  padding: 28px 32px;
+  gap: 28px;
+}
+
+.requester-shell .ops-hero h1 {
+  font-size: clamp(32px, 3vw, 44px);
+}
+
+.requester-shell .ops-hero p {
+  margin-top: 10px;
+}
+
+.requester-shell .hero-photo-grid {
+  justify-self: end;
+  max-width: 460px;
+  width: 100%;
 }
 
 .requester-shell .dashboard,
@@ -3125,6 +3142,22 @@ select:focus {
 .requester-shell .stats,
 .requester-shell .ops-summary {
   width: 100%;
+}
+
+.health-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.health-actions button + button {
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--ink);
+}
+
+.my-task-side .action-hint {
+  flex-basis: 100%;
+  text-align: right;
 }
 
 @media (max-width: 1200px) {
@@ -3266,6 +3299,141 @@ select:focus {
   color: var(--danger);
   font-size: 14px;
   font-weight: 700;
+}
+
+.requester-topbar {
+  justify-content: flex-start;
+  min-height: 64px;
+}
+
+.requester-topbar h1 {
+  margin: 0;
+}
+
+.requester-toolbar {
+  display: none;
+}
+
+.task-list-panel {
+  scroll-margin-top: 86px;
+}
+
+.task-list-toast {
+  position: sticky;
+  top: 76px;
+  z-index: 5;
+  margin: 18px 24px 0;
+}
+
+.toast-card button {
+  min-height: 36px;
+  border-color: var(--ok);
+  color: var(--ok);
+  padding: 6px 12px;
+}
+
+.row-toggle {
+  min-height: 28px;
+  margin: 0 8px 0 0;
+  border-color: var(--hairline);
+  border-radius: 999px;
+  background: var(--cloud);
+  color: var(--ink);
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.action-cell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.action-hint {
+  flex-basis: 100%;
+  color: var(--graphite);
+  font-size: 12px;
+  line-height: 1.35;
+  text-align: right;
+}
+
+.task-table-footer {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.task-form-alert {
+  position: sticky;
+  top: 76px;
+  z-index: 8;
+  justify-content: space-between;
+  box-shadow: 0 12px 30px rgba(179, 38, 43, 0.12);
+}
+
+.validation-alert div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.validation-alert button {
+  min-height: 36px;
+  border-color: var(--danger);
+  background: var(--paper);
+  color: var(--danger);
+  padding: 6px 12px;
+}
+
+.validation-alert.compact {
+  justify-content: flex-start;
+  padding: 12px 14px;
+}
+
+.save-action-zone {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  border: 1px solid var(--hairline);
+  border-radius: 18px 18px 0 0;
+  background: rgba(255, 255, 255, 0.96);
+  padding: 16px;
+  box-shadow: 0 -18px 42px rgba(26, 26, 26, 0.08);
+  backdrop-filter: blur(16px);
+}
+
+.field-error {
+  scroll-margin-top: 108px;
+}
+
+.review-modal-card {
+  max-height: min(86vh, 760px);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+}
+
+.review-modal-body {
+  min-height: 0;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.review-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  border-top: 1px solid var(--hairline);
+  background: var(--paper);
+  padding-top: 16px;
+}
+
+.review-modal-footer button {
+  min-width: 220px;
+}
+
+.review-error-message {
+  margin-top: 10px;
 }
 
 /* Dense annotation workspace: reduce scroll and keep image + answers visible together. */

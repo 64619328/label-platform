@@ -96,21 +96,7 @@ export function RequesterShell({ title, children }: Props) {
       <section className="requester-main">
         <header className="requester-topbar">
           <div>
-            <span className="side-kicker">Requester Workspace</span>
             <h1>{title}</h1>
-          </div>
-          <div className="requester-toolbar">
-            <span className="search-box requester-search">
-              <span>⌕</span>
-              <input placeholder="搜索任务" />
-            </span>
-            <div className="date-range-control">
-              <span>年 / 月 / 日</span>
-              <span>至</span>
-              <span>年 / 月 / 日</span>
-              <button className="primary">确定</button>
-            </div>
-            <button>重置</button>
           </div>
         </header>
         <div className="requester-content">{children}</div>

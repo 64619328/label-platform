@@ -97,6 +97,7 @@ export default function RequesterReviewPage() {
                         <Link href={`/requester/tasks/${task.id}`}>
                           <button>详情</button>
                         </Link>
+                        {pendingPackages === 0 ? <span className="action-hint">暂无待抽检子任务包</span> : null}
                       </div>
                     </div>
                   </article>

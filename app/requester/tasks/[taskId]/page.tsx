@@ -34,7 +34,7 @@ export default function RequesterTaskDetailPage() {
       <div className="page grid">
         <div className="row between">
           <div>
-            <span className="side-kicker">Task Detail</span>
+            <span className="side-kicker">任务总览</span>
             <h1>任务详情</h1>
             <p className="muted">查看任务配置、报价、任务包、抽检验收与中止处理。</p>
           </div>

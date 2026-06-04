@@ -20,14 +20,45 @@ export function ReviewBatchDialog({ task, currentUserId, onTaskChange, onClose }
   const [labelConfigId, setLabelConfigId] = useState(task.labelConfigs[0]?.id ?? "");
   const [labelOptionIds, setLabelOptionIds] = useState<string[]>([]);
   const [manualIds, setManualIds] = useState<string[]>([]);
+  const [error, setError] = useState("");
   const router = useRouter();
 
   const selectedPackage = pendingPackages.find((pkg) => pkg.id === packageId) ?? pendingPackages[0];
   const packageItems = selectedPackage ? task.formalItems.filter((item) => selectedPackage.itemIds.includes(item.id)) : [];
   const selectedLabel = task.labelConfigs.find((config) => config.id === labelConfigId) ?? task.labelConfigs[0];
+  const labelFilteredItems = samplingMode === "label_filter"
+    ? labelOptionIds.length > 0
+      ? packageItems.filter((item) => {
+          const value = item.annotationValues?.find((entry) => entry.labelConfigId === labelConfigId)?.value;
+          if (Array.isArray(value)) return value.some((optionId) => labelOptionIds.includes(optionId));
+          return Boolean(value && labelOptionIds.includes(value));
+        })
+      : []
+    : packageItems;
+  const candidateCount = samplingMode === "manual" ? manualIds.length : labelFilteredItems.length;
 
   function createBatch() {
-    if (!selectedPackage) return;
+    if (!selectedPackage) {
+      setError("当前任务暂无待验收子任务包。");
+      return;
+    }
+    if (samplingMode === "manual" && manualIds.length === 0) {
+      setError("请至少手动选择 1 条抽检数据。");
+      return;
+    }
+    if (samplingMode === "label_filter" && labelOptionIds.length === 0) {
+      setError("请至少选择 1 个标签选项。");
+      return;
+    }
+    if (candidateCount <= 0) {
+      setError("当前筛选条件下没有可抽检数据，请调整抽检条件。");
+      return;
+    }
+    if (sampleCount < 1 || sampleCount > candidateCount) {
+      setError(`抽检条数需在 1 到 ${candidateCount} 之间。`);
+      return;
+    }
+    setError("");
     const result = createReviewBatchWithResult(
       task,
       selectedPackage.id,
@@ -54,14 +85,16 @@ export function ReviewBatchDialog({ task, currentUserId, onTaskChange, onClose }
           </div>
           <button onClick={onClose}>关闭</button>
         </div>
-        {pendingPackages.length === 0 ? (
-          <div className="empty">当前任务暂无待验收子任务包</div>
-        ) : (
-          <div className="grid">
+        <div className="review-modal-body">
+          {pendingPackages.length === 0 ? (
+            <div className="empty">当前任务暂无待验收子任务包</div>
+          ) : (
+            <div className="grid">
+              {error ? <div className="validation-alert compact" role="alert">{error}</div> : null}
             <div className="grid three">
               <div className="field">
                 <label>子任务包</label>
-                <select value={selectedPackage?.id ?? ""} onChange={(event) => setPackageId(event.target.value)}>
+                <select value={selectedPackage?.id ?? ""} onChange={(event) => { setPackageId(event.target.value); setError(""); }}>
                   {pendingPackages.map((pkg, index) => (
                     <option key={pkg.id} value={pkg.id}>
                       子任务包 {index + 1} · {pkg.itemIds.length} 条
@@ -71,7 +104,7 @@ export function ReviewBatchDialog({ task, currentUserId, onTaskChange, onClose }
               </div>
               <div className="field">
                 <label>抽检方式</label>
-                <select value={samplingMode} onChange={(event) => setSamplingMode(event.target.value as ReviewSamplingMode)}>
+                <select value={samplingMode} onChange={(event) => { setSamplingMode(event.target.value as ReviewSamplingMode); setError(""); }}>
                   <option value="random">随机抽检</option>
                   <option value="label_filter">按标签筛选</option>
                   <option value="manual">手动选择</option>
@@ -79,12 +112,13 @@ export function ReviewBatchDialog({ task, currentUserId, onTaskChange, onClose }
               </div>
               <div className="field">
                 <label>抽检条数</label>
-                <input type="number" min="1" max={packageItems.length || 1} value={sampleCount} onChange={(event) => setSampleCount(Number(event.target.value))} />
+                <input type="number" min="1" max={candidateCount || 1} value={sampleCount} onChange={(event) => { setSampleCount(Number(event.target.value)); setError(""); }} />
+                <p className="muted">当前可抽检 {candidateCount} 条</p>
               </div>
             </div>
             <div className="field">
               <label>筛选问题组</label>
-              <select value={labelConfigId} onChange={(event) => setLabelConfigId(event.target.value)}>
+              <select value={labelConfigId} onChange={(event) => { setLabelConfigId(event.target.value); setLabelOptionIds([]); setError(""); }}>
                 {task.labelConfigs.map((config) => (
                   <option key={config.id} value={config.id}>
                     {config.title}
@@ -101,11 +135,14 @@ export function ReviewBatchDialog({ task, currentUserId, onTaskChange, onClose }
                       type="checkbox"
                       checked={labelOptionIds.includes(option.id)}
                       onChange={() =>
-                        setLabelOptionIds(
+                        {
+                          setLabelOptionIds(
                           labelOptionIds.includes(option.id)
                             ? labelOptionIds.filter((id) => id !== option.id)
                             : [...labelOptionIds, option.id]
-                        )
+                          );
+                          setError("");
+                        }
                       }
                     />
                     {option.label}
@@ -121,18 +158,26 @@ export function ReviewBatchDialog({ task, currentUserId, onTaskChange, onClose }
                       style={{ width: "auto" }}
                       type="checkbox"
                       checked={manualIds.includes(item.id)}
-                      onChange={() => setManualIds(manualIds.includes(item.id) ? manualIds.filter((id) => id !== item.id) : [...manualIds, item.id])}
+                      onChange={() => {
+                        setManualIds(manualIds.includes(item.id) ? manualIds.filter((id) => id !== item.id) : [...manualIds, item.id]);
+                        setError("");
+                      }}
                     />
                     数据 {index + 1}
                   </label>
                 ))}
               </div>
             ) : null}
+            </div>
+          )}
+        </div>
+        {pendingPackages.length ? (
+          <div className="review-modal-footer">
             <button className="primary" onClick={createBatch}>
               创建抽检批次
             </button>
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );

@@ -18,6 +18,7 @@ export default function RequesterReviewBatchPage() {
   const [loaded, setLoaded] = useState(false);
   const [layoutMode, setLayoutMode] = useState<LayoutMode>("masonry");
   const [rejectDraft, setRejectDraft] = useState<Record<string, { issue: RejectionIssueType; reason: string }>>({});
+  const [rejectErrors, setRejectErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     setTasks(getTasks());
@@ -59,7 +60,14 @@ export default function RequesterReviewBatchPage() {
   function rejectItem(itemId: string) {
     if (!task || !batch) return;
     const draft = rejectDraft[itemId] ?? { issue: "label_error" as RejectionIssueType, reason: "" };
-    if (!draft.reason.trim()) return;
+    if (!draft.reason.trim()) {
+      setRejectErrors((current) => ({ ...current, [itemId]: "请填写驳回原因" }));
+      window.setTimeout(() => {
+        document.querySelector<HTMLInputElement>(`[data-reject-reason="${itemId}"]`)?.focus();
+      }, 30);
+      return;
+    }
+    setRejectErrors((current) => ({ ...current, [itemId]: "" }));
     persist(rejectReviewItem(task, batch.id, batch.packageId, itemId, draft.issue, draft.reason));
   }
 
@@ -83,7 +91,7 @@ export default function RequesterReviewBatchPage() {
     <main className="review-workspace">
       <div className="review-workspace-top">
         <div>
-          <span className="side-kicker">Review Batch</span>
+          <span className="side-kicker">抽检工作台</span>
           <h1>抽检批次 {batch.id}</h1>
           <p className="muted">
             {task.title} · {batch.samplingMode} · 通过 {approvedCount} · 驳回 {rejectedCount} · 样本 {sampledItems.length}
@@ -117,9 +125,13 @@ export default function RequesterReviewBatchPage() {
                     itemIndex={sampledItems.findIndex((sampledItem) => sampledItem.id === item.id)}
                     task={task}
                     draft={rejectDraft[item.id] ?? { issue: "label_error" as RejectionIssueType, reason: "" }}
+                    error={rejectErrors[item.id] ?? ""}
                     onApprove={approveItem}
                     onReject={rejectItem}
-                    onDraftChange={(nextDraft) => setRejectDraft({ ...rejectDraft, [item.id]: nextDraft })}
+                    onDraftChange={(nextDraft) => {
+                      setRejectDraft({ ...rejectDraft, [item.id]: nextDraft });
+                      setRejectErrors((current) => ({ ...current, [item.id]: "" }));
+                    }}
                   />
                 ))}
               </div>
@@ -131,9 +143,13 @@ export default function RequesterReviewBatchPage() {
                 itemIndex={index}
                 task={task}
                 draft={rejectDraft[item.id] ?? { issue: "label_error" as RejectionIssueType, reason: "" }}
+                error={rejectErrors[item.id] ?? ""}
                 onApprove={approveItem}
                 onReject={rejectItem}
-                onDraftChange={(nextDraft) => setRejectDraft({ ...rejectDraft, [item.id]: nextDraft })}
+                onDraftChange={(nextDraft) => {
+                  setRejectDraft({ ...rejectDraft, [item.id]: nextDraft });
+                  setRejectErrors((current) => ({ ...current, [item.id]: "" }));
+                }}
               />
             ))}
       </section>
@@ -146,6 +162,7 @@ function ReviewCard({
   itemIndex,
   task,
   draft,
+  error,
   onApprove,
   onReject,
   onDraftChange
@@ -154,6 +171,7 @@ function ReviewCard({
   itemIndex: number;
   task: Task;
   draft: { issue: RejectionIssueType; reason: string };
+  error: string;
   onApprove: (itemId: string) => void;
   onReject: (itemId: string) => void;
   onDraftChange: (draft: { issue: RejectionIssueType; reason: string }) => void;
@@ -183,6 +201,7 @@ function ReviewCard({
           ))}
         </select>
         <input
+          data-reject-reason={item.id}
           placeholder="驳回原因"
           value={draft.reason}
           onChange={(event) => onDraftChange({ ...draft, reason: event.target.value })}
@@ -191,6 +210,7 @@ function ReviewCard({
           驳回
         </button>
       </div>
+      {error ? <p className="field-error-message review-error-message">{error}</p> : null}
     </article>
   );
 }

@@ -14,6 +14,11 @@ import { formatDate } from "@/lib/utils";
 type TaskFilter = "attention" | "all" | Task["status"];
 
 const attentionStatuses = new Set<Task["status"]>(["pending_quote_selection", "pending_review", "partially_rejected"]);
+const queueFilterMap: Record<string, TaskFilter> = {
+  待选报价: "pending_quote_selection",
+  待验收: "pending_review",
+  需复核: "partially_rejected"
+};
 const taskStatusFilters: Task["status"][] = [
   "draft",
   "pending_trial",
@@ -56,11 +61,9 @@ export default function RequesterDashboardPage() {
     if (isTaskFilter(filterParam)) setFilter(filterParam);
     if (createdTaskId) {
       setHighlightedTaskId(createdTaskId);
-      window.setTimeout(() => setHighlightedTaskId(""), 8000);
     }
     if (toastMessages[toastParam]) {
       setToast(toastMessages[toastParam]);
-      window.setTimeout(() => setToast(""), 8000);
     }
   }, []);
 
@@ -184,12 +187,18 @@ export default function RequesterDashboardPage() {
     setSelectedId((current) => (current === taskId ? "" : taskId));
   }
 
+  function focusTaskList(nextFilter: TaskFilter) {
+    setFilter(nextFilter);
+    window.setTimeout(() => {
+      document.getElementById("task-list")?.scrollIntoView({ block: "start", behavior: "smooth" });
+    }, 50);
+  }
+
   return (
     <RequesterShell title="任务管理">
       <div className="page page-wide grid">
         <section className="ops-hero">
           <div className="ops-hero-main">
-            <span className="side-kicker">Annota Workbench</span>
             <h1>图标台</h1>
             <p>从试标到验收，一台搞定。</p>
             <div className="hero-action-row">
@@ -218,7 +227,7 @@ export default function RequesterDashboardPage() {
             <button
               className="queue-card"
               key={card.label}
-              onClick={() => setFilter(card.label === "待选报价" ? "pending_quote_selection" : card.label === "待验收" ? "pending_review" : "attention")}
+              onClick={() => focusTaskList(queueFilterMap[card.label])}
             >
               <span className="side-kicker">{card.label}</span>
               <strong>{card.value}</strong>
@@ -236,10 +245,14 @@ export default function RequesterDashboardPage() {
 
         <section className="dashboard">
           <div className="panel task-list-panel" id="task-list">
-            {toast ? <div className="toast-card success task-list-toast">{toast}</div> : null}
+            {toast ? (
+              <div className="toast-card success task-list-toast">
+                <span>{toast}</span>
+                <button onClick={() => setToast("")}>我知道了</button>
+              </div>
+            ) : null}
             <div className="task-panel-head">
               <div>
-                <span className="side-kicker">Task Operations</span>
                 <h2>任务列表</h2>
                 <p className="muted">优先处理报价选择、抽检验收和质量风险任务。</p>
               </div>
@@ -278,6 +291,16 @@ export default function RequesterDashboardPage() {
                       <tr id={`task-row-${task.id}`} className={rowClassName} onClick={() => toggleTaskDetail(task.id)}>
                         <td className="market-task-id">任务编号 R-{String(index + 1).padStart(3, "0")}</td>
                         <td>
+                          <button
+                            className="row-toggle"
+                            aria-expanded={task.id === selected?.id}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              toggleTaskDetail(task.id);
+                            }}
+                          >
+                            {task.id === selected?.id ? "收起" : "展开"}
+                          </button>
                           <strong>{task.title}</strong>
                           <div className="muted">正式数据 {task.formalItems.length} 条 · 截止 {formatDate(task.deadline)}</div>
                         </td>
@@ -315,6 +338,9 @@ export default function RequesterDashboardPage() {
                             >
                               下载
                             </button>
+                            {task.status !== "completed" && task.status !== "cancelled" ? (
+                              <span className="action-hint">仅完成/中止可下载</span>
+                            ) : null}
                           </div>
                         </td>
                       </tr>
@@ -342,13 +368,8 @@ export default function RequesterDashboardPage() {
                 ) : null}
               </tbody>
             </table>
-            <div className="row between task-table-footer">
+            <div className="task-table-footer">
               <span className="muted">当前展示 {filteredTasks.length} / {totals.total} 个任务</span>
-              <div className="row">
-                <button>上一页</button>
-                <button className="active-page">1</button>
-                <button>下一页</button>
-              </div>
             </div>
           </div>
         </section>
@@ -372,7 +393,10 @@ export default function RequesterDashboardPage() {
             <div style={{ position: "relative", zIndex: 1 }}>
               <h2>健康诊断：{healthStatus}</h2>
               <p>当前待验收任务 {totals.review} 个，部分驳回任务 {requesterTasks.filter((task) => task.status === "partially_rejected").length} 个，平均处理链路稳定。</p>
-              <button>查看诊断记录</button>
+              <div className="health-actions">
+                <button onClick={() => focusTaskList("partially_rejected")}>查看需复核</button>
+                <button onClick={() => focusTaskList("pending_review")}>查看待验收</button>
+              </div>
             </div>
           </div>
         </section>
