@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { AppHeader } from "@/components/AppHeader";
 import { ImageViewer } from "@/components/ImageViewer";
 import { isComplete, LabelForm } from "@/components/LabelForm";
 import { SourceDataMeta } from "@/components/SourceDataMeta";
@@ -19,7 +18,7 @@ export default function WorkspacePage() {
   const [packageSize, setPackageSize] = useState(3);
   const [selectedPackageId, setSelectedPackageId] = useState("");
   const [activeItemId, setActiveItemId] = useState("");
-  const [appealReason, setAppealReason] = useState("");
+  const [appealReasons, setAppealReasons] = useState<Record<string, string>>({});
   const [message, setMessage] = useState("");
 
   useEffect(() => {
@@ -34,12 +33,20 @@ export default function WorkspacePage() {
   const activeOwnedPackage = myPackages.find((pkg) => pkg.status === "not_started" || pkg.status === "in_progress");
   const packageItem = useMemo(() => myPackages.find((pkg) => pkg.id === selectedPackageId) ?? activeOwnedPackage ?? myPackages[0], [myPackages, selectedPackageId, activeOwnedPackage]);
   const packageItems = task && packageItem ? task.formalItems.filter((item) => packageItem.itemIds.includes(item.id)) : [];
-  const activeItem = packageItems.find((item) => item.id === activeItemId) ?? packageItems[0];
+
+  useEffect(() => {
+    if (!packageItems.length) {
+      setActiveItemId("");
+      return;
+    }
+    if (!packageItems.some((item) => item.id === activeItemId)) {
+      setActiveItemId(packageItems[0].id);
+    }
+  }, [activeItemId, packageItems]);
 
   if (!task) {
     return (
-      <main className="shell">
-        <AppHeader />
+      <main className="shell annotation-shell">
         <div className="page empty">任务不存在</div>
       </main>
     );
@@ -60,9 +67,14 @@ export default function WorkspacePage() {
     setMessage(nextPackage ? "已领取一个子任务包" : "暂无可领取的子任务包");
   }
 
-  function saveValues(values: AnnotationValue[]) {
-    if (!task || !activeItem) return;
-    persist(updateFormalItem(task, activeItem.id, values));
+  function saveValues(itemId: string, values: AnnotationValue[]) {
+    if (!task) return;
+    persist(updateFormalItem(task, itemId, values));
+  }
+
+  function jumpToItem(itemId: string) {
+    setActiveItemId(itemId);
+    document.getElementById(`formal-item-${itemId}`)?.scrollIntoView({ block: "start", behavior: "smooth" });
   }
 
   function submitCurrentPackage() {
@@ -79,30 +91,30 @@ export default function WorkspacePage() {
   }
 
   function appeal(itemId: string) {
-    if (!task || !appealReason.trim()) return;
-    persist(appealItem(task, itemId, appealReason));
-    setAppealReason("");
+    const reason = appealReasons[itemId]?.trim();
+    if (!task || !reason) return;
+    persist(appealItem(task, itemId, reason));
+    setAppealReasons((current) => ({ ...current, [itemId]: "" }));
   }
 
   return (
-    <main className="shell">
-      <AppHeader />
-      <div className="page page-wide grid">
-        <div className="detail-hero">
-          <div>
-            <h1>正式标注工作台</h1>
-            <p className="muted">{task.title}</p>
-          </div>
-          <div className="market-task-actions">
-            <Link href="/annotator/tasks">
-              <button>返回任务大厅</button>
-            </Link>
-          </div>
+    <main className="shell annotation-shell">
+      <div className="annotation-workspace-nav">
+        <div>
+          <h1>正式标注工作台</h1>
+          <p className="muted">{task.title}</p>
         </div>
-        {message ? <div className="panel">{message}</div> : null}
-        {task.status === "cancelled" ? <div className="panel">任务已中止，只能查看历史结果。</div> : null}
+        <div className="market-task-actions">
+          <Link href="/annotator/tasks">
+            <button>返回任务大厅</button>
+          </Link>
+        </div>
+      </div>
+      <div className="page page-wide grid annotation-workspace has-workspace-nav">
+        {message ? <div className="panel annotation-message">{message}</div> : null}
+        {task.status === "cancelled" ? <div className="panel annotation-message">任务已中止，只能查看历史结果。</div> : null}
 
-        <section className="panel">
+        <section className="panel annotation-package-panel">
           <div className="row between">
             <div>
               <h2>子任务包</h2>
@@ -132,55 +144,73 @@ export default function WorkspacePage() {
           </div>
         </section>
 
-        {packageItem && activeItem ? (
-          <section className="dashboard">
-            <div className="panel">
+        {packageItem && packageItems.length ? (
+          <section className="dashboard annotation-dashboard">
+            <div className="panel annotation-package-list">
               <h2>包内数据</h2>
               <div className="list">
-                {packageItems.map((item, index) => (
-                  <button key={item.id} className={item.id === activeItem.id ? "item active" : "item"} onClick={() => setActiveItemId(item.id)}>
-                    <div className="row between">
-                      <strong>数据 A-{String(index + 1).padStart(3, "0")}</strong>
-                      <span className={statusBadgeClass(item.reviewStatus)}>{annotationReviewStatusLabels[item.reviewStatus]}</span>
-                    </div>
-                    {item.rejectionReason ? (
-                      <div className="muted">
-                        {item.rejectionIssueType ? issueTypeLabels[item.rejectionIssueType] : "驳回"}：{item.rejectionReason}
+                {packageItems.map((item, index) => {
+                  const complete = isComplete(item.annotationValues ?? [], task.labelConfigs);
+                  return (
+                    <button key={item.id} className={item.id === activeItemId ? "item active" : "item"} onClick={() => jumpToItem(item.id)}>
+                      <div className="row between">
+                        <strong>数据 A-{String(index + 1).padStart(3, "0")}</strong>
+                        <span className={complete ? "badge ok" : statusBadgeClass(item.reviewStatus)}>
+                          {complete ? "已填写" : annotationReviewStatusLabels[item.reviewStatus]}
+                        </span>
                       </div>
-                    ) : null}
-                  </button>
-                ))}
+                      {item.rejectionReason ? (
+                        <div className="muted">
+                          {item.rejectionIssueType ? issueTypeLabels[item.rejectionIssueType] : "驳回"}：{item.rejectionReason}
+                        </div>
+                      ) : null}
+                    </button>
+                  );
+                })}
               </div>
               <button style={{ marginTop: 12 }} className="primary" disabled={task.status === "cancelled"} onClick={submitCurrentPackage}>
                 提交当前子任务包
               </button>
             </div>
 
-            <div className="grid">
-              <div className="panel grid">
-                <div className="row between">
-                  <div>
-                    <span className="market-task-id">数据编号 {activeItem.id}</span>
-                    <h2>{activeItem.id}</h2>
+            <div className="annotation-item-stream">
+              {packageItems.map((item, index) => (
+                <article className="panel annotation-item-card" id={`formal-item-${item.id}`} key={item.id}>
+                  <div className="row between annotation-item-head">
+                    <div>
+                      <span className="market-task-id">数据编号 {item.id}</span>
+                      <h2>数据 A-{String(index + 1).padStart(3, "0")}</h2>
+                    </div>
+                    <span className={statusBadgeClass(item.reviewStatus)}>{annotationReviewStatusLabels[item.reviewStatus]}</span>
                   </div>
-                  <span className={statusBadgeClass(activeItem.reviewStatus)}>{annotationReviewStatusLabels[activeItem.reviewStatus]}</span>
-                </div>
-                <ImageViewer imageUrls={activeItem.imageUrls} displayConfig={task.displayConfig} />
-                <SourceDataMeta item={activeItem} />
-              </div>
-              <LabelForm labelConfigs={task.labelConfigs} values={activeItem.annotationValues ?? []} onChange={saveValues} />
-              {activeItem.rejectionReason ? (
-                <div className="panel grid">
-                  <h2>驳回与申诉</h2>
-                  <p>
-                    {activeItem.rejectionIssueType ? issueTypeLabels[activeItem.rejectionIssueType] : "驳回"}：{activeItem.rejectionReason}
-                  </p>
-                  <textarea disabled={activeItem.hasAppealed} placeholder="申诉/质疑原因" value={appealReason} onChange={(event) => setAppealReason(event.target.value)} />
-                  <button disabled={Boolean(activeItem.hasAppealed)} onClick={() => appeal(activeItem.id)}>
-                    {activeItem.hasAppealed ? "已申诉" : "提交一次申诉"}
-                  </button>
-                </div>
-              ) : null}
+                  <div className="annotation-item-content">
+                    <div className="grid annotation-item-media">
+                      <ImageViewer imageUrls={item.imageUrls} displayConfig={task.displayConfig} />
+                      <SourceDataMeta item={item} />
+                    </div>
+                    <div className="grid annotation-item-form">
+                      <LabelForm labelConfigs={task.labelConfigs} values={item.annotationValues ?? []} onChange={(values) => saveValues(item.id, values)} />
+                      {item.rejectionReason ? (
+                        <div className="panel grid">
+                          <h2>驳回与申诉</h2>
+                          <p>
+                            {item.rejectionIssueType ? issueTypeLabels[item.rejectionIssueType] : "驳回"}：{item.rejectionReason}
+                          </p>
+                          <textarea
+                            disabled={item.hasAppealed}
+                            placeholder="申诉/质疑原因"
+                            value={appealReasons[item.id] ?? ""}
+                            onChange={(event) => setAppealReasons((current) => ({ ...current, [item.id]: event.target.value }))}
+                          />
+                          <button disabled={Boolean(item.hasAppealed)} onClick={() => appeal(item.id)}>
+                            {item.hasAppealed ? "已申诉" : "提交一次申诉"}
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                </article>
+              ))}
             </div>
           </section>
         ) : (

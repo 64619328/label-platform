@@ -15,10 +15,18 @@ https://picsum.photos/id/1041/640/420`;
 
 const steps = ["任务配置", "数据与流程", "展示配置", "标签配置"];
 
+type ValidationError = {
+  step: number;
+  field: string;
+  message: string;
+};
+
 export default function NewTaskPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [message, setMessage] = useState("");
+  const [savingMode, setSavingMode] = useState<"draft" | "publish" | "">("");
+  const [validationError, setValidationError] = useState<ValidationError | null>(null);
   const [activeStep, setActiveStep] = useState(0);
   const [creationMode, setCreationMode] = useState<TaskCreationMode>("from_scratch");
   const [historyTaskId, setHistoryTaskId] = useState("");
@@ -165,37 +173,65 @@ export default function NewTaskPage() {
     };
   }
 
-  function validate(publish: boolean) {
-    if (!title.trim()) return "请填写任务名称";
-    if (!imageRows.trim()) return "请填写图片 URL 数据";
-    if (parseImageRows(imageRows).length === 0) return "请填写有效数据：支持图片 URL 行，或每行包含 imageName 字段的 JSON";
-    if (creationMode === "from_history" && !historyTaskId) return "请选择历史任务";
-    if (publish && entryMode === "direct_formal" && !assignedAnnotatorId) return "直接进入正式标注必须指定标注方";
-    if (publish && entryMode === "direct_formal" && creationMode === "from_scratch" && manualUnitPrice <= 0) return "请填写手动单价";
-    if (publish && entryMode === "trial_quote" && trialSampleSize <= 0) return "请填写试标数据条数";
-    if (labelConfigs.some((config) => !config.title.trim() || config.options.length === 0)) return "每个问题组需要标题和选项";
-    if (labelConfigs.some((config) => config.options.some((option) => !option.label.trim() || !option.criteria.trim()))) return "每个标签选项需要名称和判断依据";
-    return "";
+  function validate(publish: boolean): ValidationError | null {
+    if (creationMode === "from_history" && !historyTaskId) return { step: 0, field: "historyTaskId", message: "请选择历史任务" };
+    if (!title.trim()) return { step: 0, field: "title", message: "请填写任务名称" };
+    if (!imageRows.trim()) return { step: 1, field: "imageRows", message: "请填写图片 URL 或 JSON 数据" };
+    if (parseImageRows(imageRows).length === 0) return { step: 1, field: "imageRows", message: "请填写有效数据：支持图片 URL 行，或每行包含 imageName 字段的 JSON" };
+    if (publish && entryMode === "direct_formal" && !assignedAnnotatorId) return { step: 1, field: "assignedAnnotatorId", message: "直接进入正式标注必须指定标注方" };
+    if (publish && entryMode === "direct_formal" && creationMode === "from_scratch" && manualUnitPrice <= 0) return { step: 1, field: "manualUnitPrice", message: "请填写大于 0 的手动单价" };
+    if (publish && entryMode === "trial_quote" && trialSampleSize <= 0) return { step: 1, field: "trialSampleSize", message: "请填写大于 0 的试标数据条数" };
+
+    for (const [configIndex, config] of labelConfigs.entries()) {
+      if (!config.title.trim()) return { step: 3, field: `label-title-${configIndex}`, message: `请填写第 ${configIndex + 1} 个问题组标题` };
+      if (config.options.length === 0) return { step: 3, field: `label-options-${configIndex}`, message: `第 ${configIndex + 1} 个问题组需要至少一个选项` };
+      for (const [optionIndex, option] of config.options.entries()) {
+        if (!option.label.trim()) return { step: 3, field: `option-label-${configIndex}-${optionIndex}`, message: `请填写第 ${configIndex + 1} 个问题组第 ${optionIndex + 1} 个选项名称` };
+        if (!option.criteria.trim()) return { step: 3, field: `option-criteria-${configIndex}-${optionIndex}`, message: `请填写第 ${configIndex + 1} 个问题组第 ${optionIndex + 1} 个判断依据` };
+      }
+    }
+
+    return null;
   }
 
   function save(publish: boolean) {
     const error = validate(publish);
     if (error) {
-      setMessage(error);
+      setMessage("");
+      setValidationError(error);
+      setActiveStep(error.step);
+      window.setTimeout(() => {
+        const target = document.querySelector(`[data-error-field="${error.field}"]`) ?? document.querySelector(".validation-alert");
+        target?.scrollIntoView({ block: "center", behavior: "smooth" });
+      }, 80);
       return;
     }
+    setValidationError(null);
     const currentUser = getCurrentUser();
     if (currentUser.role !== "requester") {
       setMessage("当前身份不能发布任务");
       window.location.href = "/annotator/tasks";
       return;
     }
+    setSavingMode(publish ? "publish" : "draft");
     const existing = tasks.find((task) => task.id === editId);
     const nextTask = existing ? updateTaskFromInput(existing, buildInput(), publish) : createTaskFromInput(buildInput(), currentUser.id, publish);
     const nextTasks = existing ? tasks.map((task) => (task.id === existing.id ? nextTask : task)) : [...tasks, nextTask];
     saveTasks(nextTasks);
-    setMessage(publish ? "任务已发布" : "草稿已保存");
-    window.location.href = "/requester/dashboard";
+    const params = new URLSearchParams({
+      filter: nextTask.status,
+      created: nextTask.id,
+      toast: publish ? (existing?.status === "draft" ? "draft_published" : "published") : "draft_saved"
+    });
+    window.location.href = `/requester/dashboard?${params.toString()}#task-list`;
+  }
+
+  function fieldClass(field: string) {
+    return validationError?.field === field ? "field field-error" : "field";
+  }
+
+  function fieldMessage(field: string) {
+    return validationError?.field === field ? <p className="field-error-message">{validationError.message}</p> : null;
   }
 
   return (
@@ -232,7 +268,7 @@ export default function NewTaskPage() {
                   </select>
                 </div>
                 {creationMode === "from_history" ? (
-                  <div className="field">
+                  <div className={fieldClass("historyTaskId")} data-error-field="historyTaskId">
                     <label>历史任务</label>
                     <select value={historyTaskId} onChange={(event) => applyHistory(event.target.value)}>
                       <option value="">请选择</option>
@@ -242,6 +278,7 @@ export default function NewTaskPage() {
                         </option>
                       ))}
                     </select>
+                    {fieldMessage("historyTaskId")}
                   </div>
                 ) : null}
                 <div className="field">
@@ -251,9 +288,10 @@ export default function NewTaskPage() {
                     <option value="direct_formal">直接进入正式标注</option>
                   </select>
                 </div>
-                <div className="field">
+                <div className={fieldClass("title")} data-error-field="title">
                   <label>任务名称</label>
                   <input placeholder="请输入任务名称，如：商品图安全审核标注" value={title} onChange={(event) => setTitle(event.target.value)} />
+                  {fieldMessage("title")}
                 </div>
                 <div className="field">
                   <label>任务描述</label>
@@ -281,7 +319,7 @@ export default function NewTaskPage() {
                     <label>截止时间</label>
                     <input type="date" value={deadline} onChange={(event) => setDeadline(event.target.value)} />
                   </div>
-                  <div className="field">
+                  <div className={fieldClass("assignedAnnotatorId")} data-error-field="assignedAnnotatorId">
                     <label>指定标注方</label>
                     <select value={assignedAnnotatorId} onChange={(event) => setAssignedAnnotatorId(event.target.value)}>
                       <option value="">不指定</option>
@@ -291,12 +329,14 @@ export default function NewTaskPage() {
                         </option>
                       ))}
                     </select>
+                    {fieldMessage("assignedAnnotatorId")}
                   </div>
                 </div>
                 {entryMode === "direct_formal" ? (
-                  <div className="field">
+                  <div className={fieldClass("manualUnitPrice")} data-error-field="manualUnitPrice">
                     <label>手动单价（每条数据）</label>
                     <input type="number" min="0" step="0.01" value={manualUnitPrice} onChange={(event) => setManualUnitPrice(Number(event.target.value))} />
+                    {fieldMessage("manualUnitPrice")}
                   </div>
                 ) : (
                   <div className="grid two">
@@ -307,13 +347,14 @@ export default function NewTaskPage() {
                         <option value="random_n">随机 N 条</option>
                       </select>
                     </div>
-                    <div className="field">
+                    <div className={fieldClass("trialSampleSize")} data-error-field="trialSampleSize">
                       <label>试标条数</label>
                       <input type="number" min="1" value={trialSampleSize} onChange={(event) => setTrialSampleSize(Number(event.target.value))} />
+                      {fieldMessage("trialSampleSize")}
                     </div>
                   </div>
                 )}
-                <div className="field">
+                <div className={fieldClass("imageRows")} data-error-field="imageRows">
                   <label>数据内容</label>
                   <textarea
                     style={{ minHeight: 220 }}
@@ -321,6 +362,7 @@ export default function NewTaskPage() {
                     value={imageRows}
                     onChange={(event) => setImageRows(event.target.value)}
                   />
+                  {fieldMessage("imageRows")}
                 </div>
               </>
             ) : null}
@@ -382,9 +424,10 @@ export default function NewTaskPage() {
                 {labelConfigs.map((config, index) => (
                   <div className="item grid" key={config.id}>
                     <div className="grid two">
-                      <div className="field">
+                      <div className={fieldClass(`label-title-${index}`)} data-error-field={`label-title-${index}`}>
                         <label>问题组标题</label>
                         <input value={config.title} onChange={(event) => updateLabelTitle(index, event.target.value)} />
+                        {fieldMessage(`label-title-${index}`)}
                       </div>
                       <div className="field">
                         <label>选择方式</label>
@@ -398,13 +441,15 @@ export default function NewTaskPage() {
                       {config.options.map((option, optionIndex) => (
                         <div className="panel" key={option.id}>
                           <div className="grid two">
-                            <div className="field">
+                            <div className={fieldClass(`option-label-${index}-${optionIndex}`)} data-error-field={`option-label-${index}-${optionIndex}`}>
                               <label>选项名称</label>
                               <input value={option.label} onChange={(event) => updateOption(index, optionIndex, "label", event.target.value)} />
+                              {fieldMessage(`option-label-${index}-${optionIndex}`)}
                             </div>
-                            <div className="field">
+                            <div className={fieldClass(`option-criteria-${index}-${optionIndex}`)} data-error-field={`option-criteria-${index}-${optionIndex}`}>
                               <label>判断依据</label>
                               <input value={option.criteria} onChange={(event) => updateOption(index, optionIndex, "criteria", event.target.value)} />
+                              {fieldMessage(`option-criteria-${index}-${optionIndex}`)}
                             </div>
                           </div>
                           <button style={{ marginTop: 8 }} disabled={config.options.length <= 1} onClick={() => removeOption(index, optionIndex)}>
@@ -422,20 +467,30 @@ export default function NewTaskPage() {
           </div>
         </section>
 
-        <div className="row between">
-          <div className="row">
-            <button disabled={activeStep === 0} onClick={() => setActiveStep((step) => Math.max(0, step - 1))}>
-              上一步
-            </button>
-            <button disabled={activeStep === steps.length - 1} onClick={() => setActiveStep((step) => Math.min(steps.length - 1, step + 1))}>
-              下一步
-            </button>
-          </div>
-          <div className="row">
-            <button onClick={() => save(false)}>保存草稿</button>
-            <button className="primary" onClick={() => save(true)}>
-              发布任务
-            </button>
+        <div className="save-action-zone">
+          {validationError ? (
+            <div className="validation-alert" role="alert">
+              <strong>无法继续</strong>
+              <span>{validationError.message}</span>
+            </div>
+          ) : null}
+          <div className="row between">
+            <div className="row">
+              <button disabled={activeStep === 0} onClick={() => setActiveStep((step) => Math.max(0, step - 1))}>
+                上一步
+              </button>
+              <button disabled={activeStep === steps.length - 1} onClick={() => setActiveStep((step) => Math.min(steps.length - 1, step + 1))}>
+                下一步
+              </button>
+            </div>
+            <div className="row">
+              <button disabled={Boolean(savingMode)} onClick={() => save(false)}>
+                {savingMode === "draft" ? "保存中..." : "保存草稿"}
+              </button>
+              <button className="primary" disabled={Boolean(savingMode)} onClick={() => save(true)}>
+                {savingMode === "publish" ? "发布中..." : "发布任务"}
+              </button>
+            </div>
           </div>
         </div>
       </div>

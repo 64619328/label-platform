@@ -3198,3 +3198,479 @@ select:focus {
     width: 100%;
   }
 }
+
+.toast-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border: 1px solid var(--hairline);
+  border-radius: 16px;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 16px 20px;
+  font-weight: 700;
+}
+
+.toast-card.success {
+  border-color: #c7f0da;
+  background: #f0fbf5;
+  color: var(--ok);
+}
+
+.task-list-toast {
+  margin: 18px 24px 0;
+}
+
+.task-table tr.created-highlight,
+.task-table tr.created-highlight:hover {
+  background: #fff0f2;
+  box-shadow: inset 4px 0 0 var(--brand);
+}
+
+.save-action-zone {
+  display: grid;
+  gap: 14px;
+}
+
+.validation-alert {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid #f0a8b4;
+  border-radius: 16px;
+  background: #fff0f2;
+  color: var(--danger);
+  padding: 16px 20px;
+  font-weight: 700;
+}
+
+.validation-alert strong {
+  min-width: max-content;
+  color: var(--danger);
+}
+
+.field-error label {
+  color: var(--danger);
+}
+
+.field-error input,
+.field-error textarea,
+.field-error select {
+  border-color: var(--danger);
+  background: #fff8f8;
+}
+
+.field-error-message {
+  margin: 8px 0 0;
+  color: var(--danger);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* Dense annotation workspace: reduce scroll and keep image + answers visible together. */
+.annotation-shell .topbar {
+  height: 64px;
+  padding: 0 clamp(20px, 3vw, 48px);
+}
+
+.annotation-shell .brand strong {
+  font-size: 20px;
+}
+
+.annotation-shell .product-tabs {
+  gap: 18px;
+}
+
+.annotation-shell .product-tab {
+  min-width: 52px;
+  font-size: 14px;
+}
+
+.annotation-shell .product-icon {
+  width: 28px;
+  height: 28px;
+}
+
+.annotation-shell .top-actions {
+  gap: 8px;
+}
+
+.annotation-shell .search-box {
+  width: clamp(220px, 22vw, 320px);
+  height: 42px;
+}
+
+.annotation-shell .icon-button,
+.annotation-shell .avatar {
+  width: 38px;
+  height: 38px;
+}
+
+.annotation-shell button {
+  min-height: 38px;
+  padding: 9px 16px;
+  font-size: 14px;
+}
+
+.annotation-shell input,
+.annotation-shell textarea,
+.annotation-shell select {
+  min-height: 38px;
+  padding: 9px 12px;
+}
+
+.annotation-workspace.page,
+.annotation-workspace.page-wide {
+  max-width: none;
+  padding: 78px 16px 24px;
+  gap: 12px;
+}
+
+.annotation-workspace.no-app-header.page,
+.annotation-workspace.no-app-header.page-wide {
+  padding: 16px 16px 24px;
+}
+
+.annotation-workspace-nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 86px;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--hairline);
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(18px);
+}
+
+.annotation-workspace-nav h1 {
+  margin: 0 0 4px;
+  font-size: 26px;
+  line-height: 1.15;
+}
+
+.annotation-workspace-nav p {
+  margin: 0;
+}
+
+.annotation-workspace.has-workspace-nav.page,
+.annotation-workspace.has-workspace-nav.page-wide {
+  padding: 12px 16px 24px;
+}
+
+.annotation-hero {
+  min-height: 0;
+  border-radius: 12px;
+  padding: 12px 16px;
+  box-shadow: none;
+}
+
+.annotation-hero h1 {
+  margin: 2px 0 4px;
+  font-size: 22px;
+  line-height: 1.15;
+}
+
+.annotation-message {
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+
+.annotation-package-panel {
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.annotation-package-panel h2,
+.annotation-package-list h2 {
+  margin-bottom: 4px;
+  font-size: 18px;
+}
+
+.annotation-package-panel .row {
+  gap: 6px;
+}
+
+.annotation-dashboard {
+  grid-template-columns: 248px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.annotation-package-list,
+.annotation-image-panel,
+.label-question {
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.annotation-package-list {
+  position: sticky;
+  top: 76px;
+  max-height: calc(100vh - 92px);
+  overflow: auto;
+}
+
+.annotation-workspace.has-workspace-nav .annotation-package-list {
+  top: 98px;
+  max-height: calc(100vh - 114px);
+}
+
+.annotation-package-list .list {
+  gap: 6px;
+}
+
+.annotation-package-list .item {
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.annotation-package-list .item strong {
+  font-size: 14px;
+}
+
+.annotation-item-stream {
+  display: grid;
+  gap: 16px;
+  align-content: start;
+}
+
+.annotation-item-card {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  scroll-margin-top: 102px;
+}
+
+.annotation-item-head h2 {
+  margin: 4px 0 0;
+  font-size: 22px;
+  line-height: 1.18;
+}
+
+.annotation-item-content {
+  display: grid;
+  grid-template-columns: minmax(420px, 0.95fr) minmax(420px, 1.05fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.annotation-item-media,
+.annotation-item-form {
+  align-content: start;
+}
+
+.annotation-item-card .image-viewer {
+  gap: 8px;
+}
+
+.annotation-item-card .image-strip {
+  gap: 8px;
+}
+
+.annotation-item-card .image-frame {
+  min-width: 100%;
+  height: clamp(280px, 44vh, 560px);
+  border-radius: 12px;
+  background: #f4f4f4;
+}
+
+.annotation-item-card .image-frame img {
+  object-fit: contain;
+}
+
+.trial-item-stream {
+  width: min(1380px, 100%);
+  margin: 0 auto;
+}
+
+.trial-quote-panel {
+  width: min(680px, 100%);
+  justify-self: end;
+}
+
+.annotation-main-grid {
+  grid-template-columns: minmax(460px, 0.95fr) minmax(420px, 1.05fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.annotation-image-panel {
+  position: sticky;
+  top: 76px;
+  gap: 10px;
+}
+
+.annotation-workspace.no-app-header .annotation-package-list,
+.annotation-workspace.no-app-header .annotation-image-panel {
+  top: 16px;
+  max-height: calc(100vh - 32px);
+}
+
+.annotation-image-panel h2 {
+  margin: 2px 0 0;
+  font-size: 20px;
+}
+
+.annotation-image-panel .image-viewer {
+  gap: 8px;
+}
+
+.annotation-image-panel .image-strip {
+  gap: 8px;
+}
+
+.annotation-image-panel .image-frame {
+  min-width: 100%;
+  height: clamp(260px, 42vh, 520px);
+  border-radius: 12px;
+  background: #f4f4f4;
+}
+
+.annotation-image-panel .image-frame img {
+  object-fit: contain;
+}
+
+.annotation-image-panel .badge {
+  padding: 5px 8px;
+}
+
+.label-form {
+  gap: 12px;
+}
+
+.label-question {
+  box-shadow: none;
+}
+
+.label-question h3 {
+  margin-bottom: 4px;
+  font-size: 18px;
+  line-height: 1.25;
+}
+
+.label-question-help {
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.label-options {
+  gap: 8px;
+}
+
+.label-option {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.26fr) minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  border-radius: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+}
+
+.label-option.selected {
+  border-color: var(--brand);
+  background: #fff3f5;
+}
+
+.label-option-main {
+  flex-wrap: nowrap;
+  gap: 8px;
+}
+
+.label-option-main strong {
+  font-size: 16px;
+}
+
+.label-option-criteria {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.annotation-trial-grid {
+  grid-template-columns: minmax(520px, 0.95fr) minmax(420px, 1.05fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.trial-workspace .annotation-image-panel {
+  position: sticky;
+  top: 76px;
+}
+
+@media (max-width: 1180px) {
+  .annotation-dashboard,
+  .annotation-main-grid,
+  .annotation-trial-grid,
+  .annotation-item-content {
+    grid-template-columns: 1fr;
+  }
+
+  .annotation-package-list,
+  .annotation-image-panel,
+  .trial-workspace .annotation-image-panel {
+    position: static;
+    max-height: none;
+  }
+
+  .annotation-package-list .list {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+
+  .trial-quote-panel {
+    justify-self: stretch;
+  }
+}
+
+@media (max-width: 744px) {
+  .annotation-workspace.page,
+  .annotation-workspace.page-wide {
+    padding: 84px 12px 20px;
+  }
+
+  .annotation-workspace.no-app-header.page,
+  .annotation-workspace.no-app-header.page-wide {
+    padding: 12px;
+  }
+
+  .annotation-workspace.has-workspace-nav.page,
+  .annotation-workspace.has-workspace-nav.page-wide {
+    padding: 10px;
+  }
+
+  .annotation-workspace-nav {
+    align-items: flex-start;
+    flex-direction: column;
+    min-height: 0;
+    padding: 12px;
+  }
+
+  .annotation-workspace-nav h1 {
+    font-size: 22px;
+  }
+
+  .annotation-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .annotation-item-card {
+    padding: 12px;
+  }
+
+  .annotation-item-card .image-frame {
+    height: 300px;
+  }
+
+  .annotation-image-panel .image-frame {
+    height: 300px;
+  }
+
+  .label-option {
+    grid-template-columns: 1fr;
+  }
+}

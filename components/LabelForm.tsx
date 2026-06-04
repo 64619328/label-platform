@@ -25,21 +25,21 @@ export function LabelForm({ labelConfigs, values, onChange }: Props) {
   }
 
   return (
-    <div className="grid">
+    <div className="label-form grid">
       {labelConfigs.map((config) => (
-        <div className="panel" key={config.id}>
+        <div className="panel label-question" key={config.id}>
           <h3>{config.title}</h3>
-          <div className="muted" style={{ marginBottom: 10 }}>
+          <div className="muted label-question-help">
             {config.selectionMode === "single" ? "单选" : "多选"} · 每条数据必须填写
           </div>
-          <div className="grid">
+          <div className="label-options grid">
             {config.options.map((option) => {
               const selected = config.selectionMode === "single"
                 ? current(config.id) === option.id
                 : Array.isArray(current(config.id)) && current(config.id)?.includes(option.id);
               return (
-                <label className="item" key={option.id}>
-                  <div className="row">
+                <label className={selected ? "item label-option selected" : "item label-option"} key={option.id}>
+                  <div className="row label-option-main">
                     <input
                       style={{ width: "auto" }}
                       type={config.selectionMode === "single" ? "radio" : "checkbox"}
@@ -52,7 +52,7 @@ export function LabelForm({ labelConfigs, values, onChange }: Props) {
                     />
                     <strong>{option.label}</strong>
                   </div>
-                  <div className="muted" style={{ marginTop: 6 }}>
+                  <div className="muted label-option-criteria">
                     {option.criteria}
                   </div>
                 </label>

@@ -32,22 +32,9 @@ export default function AnnotatorTasksPage() {
     return true;
   });
 
-  const stats = {
-    available: hallTasks.length,
-    trial: hallTasks.filter((task) => task.entryMode === "trial_quote").length,
-    direct: hallTasks.filter((task) => task.entryMode === "direct_formal").length,
-    quoted: hallTasks.filter((task) => task.quotes.some((quote) => quote.annotatorId === currentUser.id)).length
-  };
-
   return (
     <AnnotatorShell title="任务大厅">
       <div className="page page-wide grid">
-        <section className="stats">
-          <Stat label="可领取任务" value={stats.available} />
-          <Stat label="试标报价任务" value={stats.trial} />
-          <Stat label="直接指定任务" value={stats.direct} />
-          <Stat label="已提交报价" value={stats.quoted} />
-        </section>
         <section className="task-market-list">
           {hallTasks.length === 0 ? (
             <div className="empty">暂无可见任务</div>
@@ -108,14 +95,5 @@ export default function AnnotatorTasksPage() {
         </section>
       </div>
     </AnnotatorShell>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div className="stat">
-      <span className="muted">{label}</span>
-      <b>{value}</b>
-    </div>
   );
 }

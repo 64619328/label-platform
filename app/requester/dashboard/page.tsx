@@ -14,6 +14,27 @@ import { formatDate } from "@/lib/utils";
 type TaskFilter = "attention" | "all" | Task["status"];
 
 const attentionStatuses = new Set<Task["status"]>(["pending_quote_selection", "pending_review", "partially_rejected"]);
+const taskStatusFilters: Task["status"][] = [
+  "draft",
+  "pending_trial",
+  "trial_in_progress",
+  "pending_quote_selection",
+  "formal_in_progress",
+  "pending_review",
+  "partially_rejected",
+  "completed",
+  "cancelled"
+];
+
+const toastMessages: Record<string, string> = {
+  draft_saved: "草稿已保存，可稍后继续编辑。",
+  published: "任务已发布，已进入任务管理。",
+  draft_published: "草稿已发布，任务已进入流程。"
+};
+
+function isTaskFilter(value: string | null): value is TaskFilter {
+  return value === "attention" || value === "all" || taskStatusFilters.includes(value as Task["status"]);
+}
 
 export default function RequesterDashboardPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -21,11 +42,26 @@ export default function RequesterDashboardPage() {
   const [filter, setFilter] = useState<TaskFilter>("attention");
   const [query, setQuery] = useState("");
   const [reviewTaskId, setReviewTaskId] = useState("");
+  const [toast, setToast] = useState("");
+  const [highlightedTaskId, setHighlightedTaskId] = useState("");
 
   useEffect(() => {
     const loaded = getTasks();
+    const params = new URLSearchParams(window.location.search);
+    const filterParam = params.get("filter");
+    const createdTaskId = params.get("created") ?? "";
+    const toastParam = params.get("toast") ?? "";
     setTasks(loaded);
     setSelectedId("");
+    if (isTaskFilter(filterParam)) setFilter(filterParam);
+    if (createdTaskId) {
+      setHighlightedTaskId(createdTaskId);
+      window.setTimeout(() => setHighlightedTaskId(""), 8000);
+    }
+    if (toastMessages[toastParam]) {
+      setToast(toastMessages[toastParam]);
+      window.setTimeout(() => setToast(""), 8000);
+    }
   }, []);
 
   const users = getUsers();
@@ -43,6 +79,9 @@ export default function RequesterDashboardPage() {
       review: requesterTasks.filter((task) => task.status === "pending_review").length,
       completed: requesterTasks.filter((task) => task.status === "completed").length,
       cancelled: requesterTasks.filter((task) => task.status === "cancelled").length,
+      draft: requesterTasks.filter((task) => task.status === "draft").length,
+      pendingTrial: requesterTasks.filter((task) => task.status === "pending_trial").length,
+      trialInProgress: requesterTasks.filter((task) => task.status === "trial_in_progress").length,
       packages: requesterTasks.reduce((sum, task) => sum + task.packages.length, 0),
       items: requesterTasks.reduce((sum, task) => sum + task.formalItems.length, 0),
       approved: allStats.reduce((sum, stats) => sum + stats.approvedItems, 0),
@@ -90,6 +129,9 @@ export default function RequesterDashboardPage() {
   const filters: { label: string; value: TaskFilter; count: number }[] = [
     { label: "待处理", value: "attention", count: requesterTasks.filter((task) => attentionStatuses.has(task.status)).length },
     { label: "全部", value: "all", count: requesterTasks.length },
+    { label: "草稿", value: "draft", count: totals.draft },
+    { label: "待试标", value: "pending_trial", count: totals.pendingTrial },
+    { label: "试标中", value: "trial_in_progress", count: totals.trialInProgress },
     { label: "待选报价", value: "pending_quote_selection", count: requesterTasks.filter((task) => task.status === "pending_quote_selection").length },
     { label: "标注中", value: "formal_in_progress", count: totals.formal },
     { label: "待验收", value: "pending_review", count: totals.review },
@@ -193,7 +235,8 @@ export default function RequesterDashboardPage() {
         </section>
 
         <section className="dashboard">
-          <div className="panel task-list-panel">
+          <div className="panel task-list-panel" id="task-list">
+            {toast ? <div className="toast-card success task-list-toast">{toast}</div> : null}
             <div className="task-panel-head">
               <div>
                 <span className="side-kicker">Task Operations</span>
@@ -226,9 +269,13 @@ export default function RequesterDashboardPage() {
               <tbody>
                 {filteredTasks.map((task, index) => {
                   const annotator = users.find((user) => user.id === task.selectedAnnotatorId || user.id === task.assignedAnnotatorId)?.name ?? "-";
+                  const rowClassName = [
+                    task.id === selected?.id ? "active" : "",
+                    task.id === highlightedTaskId ? "created-highlight" : ""
+                  ].filter(Boolean).join(" ");
                   return (
                     <Fragment key={task.id}>
-                      <tr className={task.id === selected?.id ? "active" : ""} onClick={() => toggleTaskDetail(task.id)}>
+                      <tr id={`task-row-${task.id}`} className={rowClassName} onClick={() => toggleTaskDetail(task.id)}>
                         <td className="market-task-id">任务编号 R-{String(index + 1).padStart(3, "0")}</td>
                         <td>
                           <strong>{task.title}</strong>
