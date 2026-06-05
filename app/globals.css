@@ -3117,24 +3117,64 @@ select:focus {
 }
 
 .requester-shell .ops-hero {
-  grid-template-columns: minmax(0, 0.95fr) minmax(320px, 0.65fr);
-  min-height: 260px;
-  padding: 28px 32px;
-  gap: 28px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-height: auto;
+  gap: 24px;
+  border-radius: 24px;
+  padding: 22px 28px;
 }
 
 .requester-shell .ops-hero h1 {
-  font-size: clamp(32px, 3vw, 44px);
+  margin: 0;
+  font-size: 34px;
+  line-height: 1.15;
 }
 
 .requester-shell .ops-hero p {
-  margin-top: 10px;
+  margin: 6px 0 0;
+  font-size: 15px;
 }
 
-.requester-shell .hero-photo-grid {
+.requester-shell .ops-hero-main {
+  gap: 8px;
+}
+
+.requester-shell .ops-hero-actions {
   justify-self: end;
-  max-width: 460px;
-  width: 100%;
+  align-self: center;
+}
+
+.requester-shell .hero-action-row {
+  margin: 0;
+  flex-wrap: nowrap;
+}
+
+.requester-shell .hero-signal-row {
+  margin-top: 8px;
+}
+
+.requester-shell .ops-summary {
+  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.requester-shell .queue-card {
+  min-height: 82px;
+  border-radius: 20px;
+  gap: 6px;
+  padding: 14px 18px;
+}
+
+.requester-shell .queue-card strong {
+  font-size: 28px;
+}
+
+.requester-shell .queue-card .muted {
+  display: none;
+}
+
+.requester-shell .queue-card .mini-progress {
+  margin-top: 2px;
 }
 
 .requester-shell .dashboard,
@@ -3841,4 +3881,446 @@ select:focus {
   .label-option {
     grid-template-columns: 1fr;
   }
+}
+
+/* Cohere visual layer for requester pages. Layout is intentionally unchanged. */
+.requester-shell {
+  --canvas: #ffffff;
+  --paper: #ffffff;
+  --cloud: #eeece7;
+  --fog: #f6f5f2;
+  --steel: #d9d9dd;
+  --hairline: #d9d9dd;
+  --ink: #212121;
+  --ink-deep: #000000;
+  --charcoal: #616161;
+  --graphite: #93939f;
+  --on-ink: #ffffff;
+  --brand: #17171c;
+  --brand-bright: #1863dc;
+  --brand-strong: #000000;
+  --brand-soft: #edfce9;
+  --danger: #b30000;
+  --warn: #ff7759;
+  --ok: #003c33;
+  --bg: var(--cloud);
+  --panel: var(--paper);
+  --muted: var(--charcoal);
+  --line: var(--hairline);
+  --shadow-soft: none;
+  --shadow-modal: 0 16px 48px rgba(23, 23, 28, 0.14);
+  background: var(--cloud);
+  color: var(--ink);
+  font-family: "Unica77 Cohere Web", Inter, Arial, "PingFang SC", "Microsoft YaHei", ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0;
+}
+
+.requester-shell h1,
+.requester-shell h2,
+.requester-shell h3,
+.requester-brand strong {
+  color: var(--ink);
+  font-family: CohereText, "Space Grotesk", Inter, "PingFang SC", "Microsoft YaHei", ui-sans-serif, system-ui, sans-serif;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+}
+
+.requester-shell button,
+.requester-shell input,
+.requester-shell textarea,
+.requester-shell select {
+  font-family: "Unica77 Cohere Web", Inter, Arial, "PingFang SC", "Microsoft YaHei", ui-sans-serif, system-ui, sans-serif;
+}
+
+.requester-shell button {
+  border-color: var(--brand);
+  border-radius: 32px;
+  background: transparent;
+  color: var(--ink);
+  box-shadow: none;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.requester-shell button.primary,
+.requester-shell .primary {
+  border-color: var(--brand);
+  background: var(--brand);
+  color: var(--on-ink);
+}
+
+.requester-shell button.primary:hover {
+  background: var(--brand-strong);
+}
+
+.requester-shell button:disabled {
+  border-color: var(--steel);
+  background: var(--fog);
+  color: var(--graphite);
+  opacity: 1;
+}
+
+.requester-shell input,
+.requester-shell textarea,
+.requester-shell select {
+  border-color: var(--hairline);
+  border-radius: 8px;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: none;
+}
+
+.requester-shell input:focus,
+.requester-shell textarea:focus,
+.requester-shell select:focus {
+  border-color: #9b60aa;
+  outline: 2px solid rgba(155, 96, 170, 0.16);
+  outline-offset: 1px;
+}
+
+.requester-sidebar {
+  border-right-color: var(--hairline);
+  background: var(--canvas);
+}
+
+.requester-brand-mark {
+  border-radius: 9999px;
+  background: var(--brand);
+  color: var(--on-ink);
+}
+
+.requester-brand small,
+.requester-user-card p,
+.muted {
+  color: var(--graphite);
+}
+
+.requester-nav-item {
+  border-radius: 8px;
+  color: var(--charcoal);
+  font-weight: 500;
+}
+
+.requester-nav-item span {
+  border-radius: 9999px;
+  background: var(--fog);
+  color: var(--ink);
+}
+
+.requester-nav-item.active {
+  background: var(--brand);
+  color: var(--on-ink);
+}
+
+.requester-nav-item.active span {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--on-ink);
+}
+
+.requester-topbar {
+  border-bottom-color: var(--hairline);
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: none;
+}
+
+.requester-topbar h1 {
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+.requester-content {
+  background: var(--cloud);
+}
+
+.requester-shell .ops-hero,
+.requester-shell .queue-card,
+.requester-shell .panel,
+.requester-shell .task-list-panel,
+.requester-shell .my-task-list,
+.requester-shell .market-task-row,
+.requester-shell .market-task-card,
+.requester-shell .detail-hero,
+.requester-shell .wizard-panel,
+.requester-shell .review-modal-card,
+.requester-shell .toast-card,
+.requester-shell .validation-alert {
+  border-color: var(--hairline);
+  background: var(--paper);
+  box-shadow: none;
+}
+
+.requester-shell .ops-hero {
+  border-radius: 22px;
+  background: var(--canvas);
+}
+
+.requester-shell .ops-hero h1 {
+  font-weight: 400;
+  letter-spacing: -0.04em;
+}
+
+.requester-shell .ops-hero p {
+  color: var(--charcoal);
+  line-height: 1.4;
+}
+
+.requester-shell .queue-card,
+.requester-shell .panel,
+.requester-shell .task-list-panel,
+.requester-shell .my-task-list,
+.requester-shell .market-task-row,
+.requester-shell .market-task-card {
+  border-radius: 16px;
+}
+
+.requester-shell .queue-card {
+  text-transform: none;
+}
+
+.requester-shell .queue-card .side-kicker,
+.requester-shell .task-table th,
+.requester-shell .side-kicker {
+  color: var(--graphite);
+  font-family: CohereMono, "SFMono-Regular", Menlo, Consolas, ui-monospace, monospace;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.requester-shell .queue-card strong,
+.requester-shell .stat b {
+  color: var(--ink);
+  font-weight: 400;
+  letter-spacing: -0.03em;
+}
+
+.requester-shell .task-panel-head,
+.requester-shell .task-table th {
+  background: var(--fog);
+}
+
+.requester-shell .task-table th,
+.requester-shell .task-table td {
+  border-bottom-color: var(--hairline);
+}
+
+.requester-shell .task-table tr:hover,
+.requester-shell .task-table tr.active,
+.requester-shell .embedded-detail-row,
+.requester-shell .embedded-detail-row:hover {
+  background: var(--fog);
+}
+
+.requester-shell .row-toggle,
+.requester-shell .filter-tab,
+.requester-shell .badge {
+  border-color: var(--hairline);
+  border-radius: 30px;
+  background: var(--fog);
+  color: var(--ink);
+  box-shadow: none;
+}
+
+.requester-shell .badge.ok,
+.requester-shell .status-completed,
+.requester-shell .status-approved {
+  background: var(--brand-soft);
+  color: var(--ok);
+}
+
+.requester-shell .badge.warn,
+.requester-shell .status-pending,
+.requester-shell .status-pending_review,
+.requester-shell .status-pending_quote_selection {
+  background: #fff4ef;
+  color: #8a3b26;
+}
+
+.requester-shell .badge.danger,
+.requester-shell .status-cancelled,
+.requester-shell .status-partially_rejected {
+  background: #fff0ec;
+  color: var(--danger);
+}
+
+.requester-shell .mini-progress {
+  background: var(--fog);
+}
+
+.requester-shell .mini-progress span {
+  background: var(--brand);
+}
+
+.requester-shell .button-compact {
+  border-radius: 30px;
+  font-weight: 500;
+}
+
+.requester-shell .health-card {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 22px;
+  background: var(--ok);
+  color: var(--on-ink);
+  box-shadow: none;
+}
+
+.requester-shell .health-card h2,
+.requester-shell .health-card p {
+  color: var(--on-ink);
+}
+
+.requester-shell .health-card::after {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.requester-shell .health-card button {
+  border-color: var(--on-ink);
+  background: var(--on-ink);
+  color: var(--ok);
+}
+
+.requester-shell .health-actions button + button {
+  background: transparent;
+  color: var(--on-ink);
+}
+
+.requester-shell .toast-card.success {
+  border-color: #c8e8c3;
+  background: var(--brand-soft);
+  color: var(--ok);
+}
+
+.requester-shell .validation-alert,
+.requester-shell .field-error input,
+.requester-shell .field-error textarea,
+.requester-shell .field-error select {
+  border-color: var(--danger);
+  background: #fff7f5;
+}
+
+.requester-shell .validation-alert,
+.requester-shell .validation-alert strong,
+.requester-shell .field-error label,
+.requester-shell .field-error-message {
+  color: var(--danger);
+}
+
+/* Compact requester review density. Keeps the existing layout, reduces vertical footprint. */
+.requester-shell .stats.three {
+  gap: 16px;
+}
+
+.requester-shell .stats.three .stat {
+  min-height: 92px;
+  border-radius: 16px;
+  padding: 18px 22px;
+}
+
+.requester-shell .stats.three .stat b {
+  margin-top: 6px;
+  font-size: 28px;
+  line-height: 1;
+}
+
+.requester-shell .my-task-list .monitor-head {
+  padding: 14px 22px;
+}
+
+.requester-shell .my-task-list .monitor-head h2 {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.2;
+}
+
+.requester-shell .my-task-row {
+  grid-template-columns: 132px minmax(0, 1fr) 210px;
+  gap: 16px;
+  padding: 14px 20px;
+}
+
+.requester-shell .my-task-thumb {
+  width: 132px;
+  height: 84px;
+  border-radius: 12px;
+}
+
+.requester-shell .my-task-main,
+.requester-shell .my-task-side {
+  gap: 6px;
+}
+
+.requester-shell .my-task-main h2 {
+  margin-top: 1px;
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.requester-shell .market-task-title {
+  gap: 10px;
+}
+
+.requester-shell .market-task-meta {
+  gap: 6px;
+}
+
+.requester-shell .my-task-row .badge {
+  min-height: 28px;
+  padding: 5px 10px;
+  font-size: 13px;
+  line-height: 1.25;
+}
+
+.requester-shell .my-task-side {
+  align-content: center;
+}
+
+.requester-shell .my-task-side strong {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.requester-shell .my-task-side .mini-progress {
+  width: 132px;
+  height: 5px;
+}
+
+.requester-shell .my-task-side .market-task-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+  padding-top: 0;
+}
+
+.requester-shell .my-task-side .market-task-actions a,
+.requester-shell .my-task-side .market-task-actions button {
+  flex: 0 0 auto;
+  min-width: 68px;
+  min-height: 38px;
+  padding: 7px 14px;
+}
+
+.requester-shell .my-task-side .market-task-actions button.primary {
+  min-width: 76px;
+}
+
+/* Annotator marketplace cards need breathing room around media and actions. */
+.requester-shell .task-market-list .market-task-row {
+  padding: 16px;
+}
+
+.requester-shell .task-market-list .market-task-thumb {
+  border-radius: 14px;
+}
+
+.requester-shell .task-market-list .market-task-main {
+  padding: 0 2px;
+}
+
+.requester-shell .task-market-list .market-task-actions {
+  padding: 0 2px 2px;
 }

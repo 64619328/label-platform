@@ -142,11 +142,6 @@ export default function RequesterDashboardPage() {
     { label: "已中止", value: "cancelled", count: totals.cancelled }
   ];
 
-  const heroImages = requesterTasks
-    .flatMap((task) => [...task.formalItems, ...task.trialItems].flatMap((item) => item.imageUrls))
-    .filter(Boolean)
-    .slice(0, 4);
-
   const supplierDistribution = useMemo(() => {
     const map = new Map<string, number>();
     requesterTasks.forEach((task) => {
@@ -201,6 +196,8 @@ export default function RequesterDashboardPage() {
           <div className="ops-hero-main">
             <h1>图标台</h1>
             <p>从试标到验收，一台搞定。</p>
+          </div>
+          <div className="ops-hero-actions">
             <div className="hero-action-row">
               <Link href="/requester/tasks/new">
                 <button className="primary">发布任务</button>
@@ -209,16 +206,6 @@ export default function RequesterDashboardPage() {
                 <button>查看验收</button>
               </Link>
             </div>
-            <div className="hero-signal-row">
-              <span className="badge">试标报价</span>
-              <span className="badge">子任务包抽检</span>
-              <span className="badge">JSON 下载</span>
-            </div>
-          </div>
-          <div className="hero-photo-grid" aria-hidden="true">
-            {heroImages.map((imageUrl, index) => (
-              <img key={`${imageUrl}-${index}`} src={imageUrl} alt="" />
-            ))}
           </div>
         </section>
 

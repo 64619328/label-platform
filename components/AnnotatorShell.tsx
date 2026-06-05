@@ -89,12 +89,11 @@ export function AnnotatorShell({ title, children }: Props) {
             </select>
           </div>
         </div>
-      </aside>
+        </aside>
 
       <section className="requester-main">
         <header className="requester-topbar">
           <div>
-            <span className="side-kicker">Annotator Workspace</span>
             <h1>{title}</h1>
           </div>
           <div className="requester-toolbar">
