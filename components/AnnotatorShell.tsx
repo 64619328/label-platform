@@ -42,7 +42,7 @@ export function AnnotatorShell({ title, children }: Props) {
   function isActive(href: string) {
     if (href === "/annotator/tasks/trial") return pathname === href || pathname.endsWith("/trial");
     if (href === "/annotator/tasks/my") return pathname === href || pathname.endsWith("/workspace");
-    return pathname === href || (pathname.startsWith("/annotator/tasks/") && !pathname.startsWith("/annotator/tasks/my") && !pathname.endsWith("/trial") && !pathname.endsWith("/workspace"));
+    return pathname === href;
   }
 
   function switchUser(nextId: string) {

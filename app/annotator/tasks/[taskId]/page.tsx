@@ -68,9 +68,10 @@ export default function AnnotatorTaskDetailPage() {
           </div>
           <div className="panel">
             <h2>配置</h2>
+            <p>展示布局：{task.displayConfig.layoutMode === "custom" ? `自定义画布（${task.displayConfig.frames?.length ?? 0} 个框）` : "基础图片展示"}</p>
             <p>图片：{task.displayConfig.imageDataMode === "single_image" ? "单张" : "多张"}</p>
-            <p>展示：{task.displayConfig.multiImageDisplayMode === "carousel" ? "左右切换" : "并列展示"}</p>
-            <p>双击放大：{task.displayConfig.enableDoubleClickZoom ? "支持" : "不支持"}</p>
+            <p>展示：{task.displayConfig.layoutMode === "custom" ? "按任务创建时的画布展示" : task.displayConfig.multiImageDisplayMode === "carousel" ? "左右切换" : "并列展示"}</p>
+            <p>细节查看：{task.displayConfig.layoutMode === "custom" ? "点击图片/视频全屏查看并左右切换" : task.displayConfig.enableDoubleClickZoom ? "支持双击放大" : "不支持"}</p>
             <p>试标数据：{task.trialItems.length} 条</p>
             <p>正式数据：{task.formalItems.length} 条</p>
           </div>

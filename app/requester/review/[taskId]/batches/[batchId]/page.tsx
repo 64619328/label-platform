@@ -186,7 +186,7 @@ function ReviewCard({
         </div>
         <span className={statusBadgeClass(item.reviewStatus)}>{annotationReviewStatusLabels[item.reviewStatus]}</span>
       </div>
-      <ImageViewer imageUrls={item.imageUrls} displayConfig={task.displayConfig} />
+      <ImageViewer imageUrls={item.imageUrls} sourceData={item.sourceData} displayConfig={task.displayConfig} />
       <SourceDataMeta item={item} />
       <AnnotationSummary task={task} item={item} />
       <div className="review-actions">

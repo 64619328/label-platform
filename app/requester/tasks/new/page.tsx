@@ -1,17 +1,19 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { DisplayLayoutBuilder } from "@/components/DisplayLayoutBuilder";
 import { RequesterShell } from "@/components/RequesterShell";
 import { defaultLabelConfigs } from "@/lib/demo-data";
+import { validateDisplayConfigLayout } from "@/lib/display-layout";
 import { getCurrentUser, getTasks, getUsers, saveTasks } from "@/lib/storage";
 import { createTaskFromInput, updateTaskFromInput } from "@/lib/task-actions";
 import type { DisplayConfig, DraftTaskInput, LabelConfig, Task, TaskCreationMode, TaskEntryMode, TrialSamplingMode } from "@/lib/types";
 import { parseImageRows, uid } from "@/lib/utils";
 
-const defaultImages = `https://picsum.photos/id/1011/640/420
-https://picsum.photos/id/1015/640/420, https://picsum.photos/id/1025/640/420
-https://picsum.photos/id/1035/640/420
-https://picsum.photos/id/1041/640/420`;
+const defaultImages = `{"imageUrls":["https://picsum.photos/id/1011/640/420","https://picsum.photos/id/1025/640/420","https://picsum.photos/id/1035/640/420"],"prompt":"请判断主图与参考图是否存在明显内容差异。","category":"商品图"}
+{"imageUrls":["https://picsum.photos/id/1015/640/420","https://picsum.photos/id/1041/640/420"],"prompt":"对比两张图的主体、背景和画面质量。","category":"对比图"}
+{"imageUrls":["https://picsum.photos/id/1050/640/420","https://picsum.photos/id/1062/640/420","https://picsum.photos/id/1074/640/420"],"prompt":"综合多张图判断是否满足标注规则。","category":"多图"}
+{"imageUrls":["https://picsum.photos/id/1084/640/420","https://picsum.photos/id/1080/640/420"],"prompt":"无法判断时请选择无法判断，并在备注中说明原因。","category":"复核"}`;
 
 const steps = ["任务配置", "数据与流程", "展示配置", "标签配置"];
 
@@ -42,10 +44,21 @@ export default function NewTaskPage() {
   const [trialSamplingMode, setTrialSamplingMode] = useState<TrialSamplingMode>("first_n");
   const [trialSampleSize, setTrialSampleSize] = useState(2);
   const [displayConfig, setDisplayConfig] = useState<DisplayConfig>({
+    layoutMode: "custom",
     imageDataMode: "multi_image",
     multiImageDisplayMode: "parallel",
     enableDoubleClickZoom: true,
-    zoomDisplayMode: "modal"
+    zoomDisplayMode: "fullscreen",
+    canvasRatio: "16:9",
+    detailViewer: {
+      enabled: true,
+      navigation: "all_media"
+    },
+    frames: [
+      { id: "frame_main_image", type: "image", label: "主图", bindingKey: "image_1", x: 0, y: 0, w: 58.3333, h: 62.5, fit: "contain", allowFullscreen: true },
+      { id: "frame_ref_image", type: "image", label: "参考图", bindingKey: "image_2", x: 58.3333, y: 0, w: 41.6667, h: 62.5, fit: "contain", allowFullscreen: true },
+      { id: "frame_prompt", type: "text", label: "辅助文本", bindingKey: "prompt", x: 0, y: 62.5, w: 100, h: 37.5, allowFullscreen: false }
+    ]
   });
   const [labelConfigs, setLabelConfigs] = useState<LabelConfig[]>(defaultLabelConfigs);
 
@@ -82,6 +95,8 @@ export default function NewTaskPage() {
   const users = getUsers();
   const annotators = users.filter((user) => user.role === "annotator");
   const historyTasks = useMemo(() => tasks.filter((task) => task.status === "completed"), [tasks]);
+  const parsedRows = useMemo(() => parseImageRows(imageRows), [imageRows]);
+  const previewRow = parsedRows[0];
 
   function applyHistory(id: string) {
     setHistoryTaskId(id);
@@ -181,6 +196,8 @@ export default function NewTaskPage() {
     if (publish && entryMode === "direct_formal" && !assignedAnnotatorId) return { step: 1, field: "assignedAnnotatorId", message: "直接进入正式标注必须指定标注方" };
     if (publish && entryMode === "direct_formal" && creationMode === "from_scratch" && manualUnitPrice <= 0) return { step: 1, field: "manualUnitPrice", message: "请填写大于 0 的手动单价" };
     if (publish && entryMode === "trial_quote" && trialSampleSize <= 0) return { step: 1, field: "trialSampleSize", message: "请填写大于 0 的试标数据条数" };
+    const displayLayoutError = validateDisplayConfigLayout(displayConfig);
+    if (displayLayoutError) return { step: 2, field: "displayLayout", message: displayLayoutError };
 
     for (const [configIndex, config] of labelConfigs.entries()) {
       if (!config.title.trim()) return { step: 3, field: `label-title-${configIndex}`, message: `请填写第 ${configIndex + 1} 个问题组标题` };
@@ -203,6 +220,10 @@ export default function NewTaskPage() {
       if (!imageRows.trim()) return { step: 1, field: "imageRows", message: "请填写图片 URL 或 JSON 数据" };
       if (parseImageRows(imageRows).length === 0) return { step: 1, field: "imageRows", message: "请填写有效数据：支持图片 URL 行，或每行包含 imageName 字段的 JSON" };
       if (entryMode === "trial_quote" && trialSampleSize <= 0) return { step: 1, field: "trialSampleSize", message: "请填写大于 0 的试标数据条数" };
+    }
+    if (step === 2) {
+      const displayLayoutError = validateDisplayConfigLayout(displayConfig);
+      if (displayLayoutError) return { step: 2, field: "displayLayout", message: displayLayoutError };
     }
     if (step === 3) {
       for (const [configIndex, config] of labelConfigs.entries()) {
@@ -422,59 +443,36 @@ export default function NewTaskPage() {
               <>
                 <div>
                   <h2>展示配置</h2>
-                  <p className="muted">控制标注工作台里的图片形态、切换方式和放大方式。</p>
+                  <p className="muted">配置每条数据默认展示画布；点击预览模式后，可以确认进入标注页时的展示效果。</p>
                 </div>
-                <div className="field">
-                  <label>数据形态</label>
-                  <select
-                    value={displayConfig.imageDataMode}
-                    onChange={(event) => setDisplayConfig({ ...displayConfig, imageDataMode: event.target.value as DisplayConfig["imageDataMode"] })}
-                  >
-                    <option value="single_image">单张图片</option>
-                    <option value="multi_image">多张图片</option>
-                  </select>
-                </div>
-                <div className="field">
-                  <label>多图展示方式</label>
-                  <select
-                    value={displayConfig.multiImageDisplayMode ?? "parallel"}
-                    onChange={(event) => setDisplayConfig({ ...displayConfig, multiImageDisplayMode: event.target.value as DisplayConfig["multiImageDisplayMode"] })}
-                  >
-                    <option value="parallel">全部并列展示</option>
-                    <option value="carousel">单张展示 + 左右切换</option>
-                  </select>
-                </div>
-                <label className="row">
-                  <input
-                    style={{ width: "auto" }}
-                    type="checkbox"
-                    checked={displayConfig.enableDoubleClickZoom}
-                    onChange={(event) => setDisplayConfig({ ...displayConfig, enableDoubleClickZoom: event.target.checked })}
+                <div data-error-field="displayLayout">
+                  <DisplayLayoutBuilder
+                    value={displayConfig}
+                    onChange={setDisplayConfig}
+                    sampleImageUrls={previewRow?.imageUrls ?? []}
+                    sampleSourceData={previewRow?.sourceData}
                   />
-                  支持双击放大
-                </label>
-                <div className="field">
-                  <label>放大展示形式</label>
-                  <select
-                    value={displayConfig.zoomDisplayMode ?? "modal"}
-                    onChange={(event) => setDisplayConfig({ ...displayConfig, zoomDisplayMode: event.target.value as DisplayConfig["zoomDisplayMode"] })}
-                  >
-                    <option value="modal">弹窗居中展示</option>
-                    <option value="fullscreen">全屏沉浸展示</option>
-                  </select>
+                  {fieldMessage("displayLayout")}
                 </div>
               </>
             ) : null}
 
             {activeStep === 3 ? (
               <>
-                <div>
-                  <h2>标签配置</h2>
-                  <p className="muted">配置标注问题组、单选/多选和每个选项的判断依据。</p>
+                <div className="label-config-head">
+                  <div>
+                    <h2>标签配置</h2>
+                    <p className="muted">配置问题组、选择方式和选项判断依据。</p>
+                  </div>
+                  <button className="primary compact-action" onClick={addLabelGroup}>添加问题组</button>
                 </div>
                 {labelConfigs.map((config, index) => (
-                  <div className="item grid" key={config.id}>
-                    <div className="grid two">
+                  <div className="label-group-card" key={config.id}>
+                    <div className="label-group-title">
+                      <span className="badge">问题组 {index + 1}</span>
+                      <button className="compact-action" onClick={() => addOption(index)}>添加选项</button>
+                    </div>
+                    <div className="label-group-fields">
                       <div className={fieldClass(`label-title-${index}`)} data-error-field={`label-title-${index}`}>
                         <label>问题组标题</label>
                         <input value={config.title} onChange={(event) => updateLabelTitle(index, event.target.value)} />
@@ -488,31 +486,32 @@ export default function NewTaskPage() {
                         </select>
                       </div>
                     </div>
-                    <div className="grid">
+                    <div className="label-options-table">
+                      <div className="label-option-header">
+                        <span>选项名称</span>
+                        <span>判断依据</span>
+                        <span>操作</span>
+                      </div>
                       {config.options.map((option, optionIndex) => (
-                        <div className="panel" key={option.id}>
-                          <div className="grid two">
-                            <div className={fieldClass(`option-label-${index}-${optionIndex}`)} data-error-field={`option-label-${index}-${optionIndex}`}>
-                              <label>选项名称</label>
-                              <input value={option.label} onChange={(event) => updateOption(index, optionIndex, "label", event.target.value)} />
-                              {fieldMessage(`option-label-${index}-${optionIndex}`)}
-                            </div>
-                            <div className={fieldClass(`option-criteria-${index}-${optionIndex}`)} data-error-field={`option-criteria-${index}-${optionIndex}`}>
-                              <label>判断依据</label>
-                              <input value={option.criteria} onChange={(event) => updateOption(index, optionIndex, "criteria", event.target.value)} />
-                              {fieldMessage(`option-criteria-${index}-${optionIndex}`)}
-                            </div>
+                        <div className="label-option-editor-row" key={option.id}>
+                          <div className={fieldClass(`option-label-${index}-${optionIndex}`)} data-error-field={`option-label-${index}-${optionIndex}`}>
+                            <label className="mobile-only">选项名称</label>
+                            <input value={option.label} onChange={(event) => updateOption(index, optionIndex, "label", event.target.value)} />
+                            {fieldMessage(`option-label-${index}-${optionIndex}`)}
                           </div>
-                          <button style={{ marginTop: 8 }} disabled={config.options.length <= 1} onClick={() => removeOption(index, optionIndex)}>
+                          <div className={fieldClass(`option-criteria-${index}-${optionIndex}`)} data-error-field={`option-criteria-${index}-${optionIndex}`}>
+                            <label className="mobile-only">判断依据</label>
+                            <input value={option.criteria} onChange={(event) => updateOption(index, optionIndex, "criteria", event.target.value)} />
+                            {fieldMessage(`option-criteria-${index}-${optionIndex}`)}
+                          </div>
+                          <button className="compact-action" disabled={config.options.length <= 1} onClick={() => removeOption(index, optionIndex)}>
                             删除选项
                           </button>
                         </div>
                       ))}
                     </div>
-                    <button onClick={() => addOption(index)}>添加选项</button>
                   </div>
                 ))}
-                <button className="primary" onClick={addLabelGroup}>添加问题组</button>
               </>
             ) : null}
           </div>

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { AnnotatorShell } from "@/components/AnnotatorShell";
 import { statusBadgeClass, taskStatusLabels } from "@/lib/labels";
 import { getCurrentUser, getTasks } from "@/lib/storage";
+import { taskCoverImage } from "@/lib/task-cover";
 import type { Task } from "@/lib/types";
 import { formatDate, money } from "@/lib/utils";
 
@@ -54,7 +55,7 @@ export default function AnnotatorTrialTasksPage() {
             <div className="my-task-rows">
               {trialTasks.map((task, index) => {
                 const quote = task.quotes.find((item) => item.annotatorId === currentUser.id);
-                const imageUrl = task.trialItems[0]?.imageUrls[0] ?? task.formalItems[0]?.imageUrls[0];
+                const imageUrl = taskCoverImage(task, "trial");
                 const priceLabel = quote
                   ? money(quote.unitPrice)
                   : task.quotedUnitPrice || task.manualUnitPrice
@@ -91,7 +92,7 @@ export default function AnnotatorTrialTasksPage() {
                           <button>查看详情</button>
                         </Link>
                         <Link href={`/annotator/tasks/${task.id}/trial`}>
-                          <button className="primary">{quote ? "查看试标" : "开始试标"}</button>
+                          <button className="primary">{quote ? "继续试标" : "开始试标"}</button>
                         </Link>
                       </div>
                     </div>

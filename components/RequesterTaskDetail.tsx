@@ -85,6 +85,43 @@ export function RequesterTaskDetail({ task, users, operatorId, onTaskChange, sho
   const stats = taskStats(task);
   const selectedLabel = task.labelConfigs.find((config) => config.id === labelConfigId) ?? task.labelConfigs[0];
   const assignedAnnotator = users.find((user) => user.id === task.assignedAnnotatorId);
+  const selectedQuote = task.quotes.find((quote) => quote.status === "selected");
+  const submittedQuotes = task.quotes.filter((quote) => quote.status === "submitted");
+  const approvedQuotes = submittedQuotes.filter((quote) => quote.trialReviewStatus === "approved");
+  const pendingReviewPackages = task.packages.filter((pkg) => pkg.status === "pending_review");
+  const appealedItems = task.formalItems.filter((item) => item.reviewStatus === "appealed");
+  const canReviewPackages = task.status === "pending_review" || task.status === "partially_rejected";
+  const quoteTodoActive = task.status === "pending_quote_selection";
+  const reviewTodoActive = canReviewPackages && pendingReviewPackages.length > 0;
+  const appealTodoActive = appealedItems.length > 0;
+
+  let nextActionTitle = "等待流程推进";
+  let nextActionText = "当前任务暂无必须处理的动作，可查看配置和流程状态。";
+
+  if (task.status === "draft") {
+    nextActionTitle = "继续完善任务配置";
+    nextActionText = "草稿尚未发布，先完成展示布局、标签和数据配置。";
+  } else if (task.status === "pending_trial" || task.status === "trial_in_progress") {
+    nextActionTitle = "等待试标报价";
+    nextActionText = "标注方完成试标并提交报价后，这里会进入报价审核和选择。";
+  } else if (task.status === "pending_quote_selection") {
+    nextActionTitle = "选择正式标注方";
+    nextActionText = `已收到 ${submittedQuotes.length} 份报价，其中 ${approvedQuotes.length} 份试标通过。先审核试标质量，再选择正式标注方。`;
+  } else if (task.status === "formal_in_progress") {
+    nextActionTitle = "等待正式标注提交";
+    nextActionText = selectedQuote
+      ? `${users.find((user) => user.id === selectedQuote.annotatorId)?.name ?? selectedQuote.annotatorId} 正在标注，提交子任务包后可进入验收。`
+      : "正式标注进行中，提交子任务包后可进入验收。";
+  } else if (canReviewPackages) {
+    nextActionTitle = "验收子任务包";
+    nextActionText = `${pendingReviewPackages.length} 个子任务包待验收，优先创建抽检批次，确认后通过或驳回。`;
+  } else if (task.status === "completed") {
+    nextActionTitle = "任务已完成";
+    nextActionText = "所有子任务包已验收通过，可在列表中下载结果。";
+  } else if (task.status === "cancelled") {
+    nextActionTitle = "任务已中止";
+    nextActionText = task.cancelReason ? `中止原因：${task.cancelReason}` : "该任务已中止。";
+  }
 
   function chooseQuote(quoteId: string) {
     onTaskChange(selectQuote(task, quoteId));
@@ -116,8 +153,8 @@ export function RequesterTaskDetail({ task, users, operatorId, onTaskChange, sho
   }
 
   return (
-    <div className="grid">
-      <section className="panel grid">
+    <div className="requester-task-detail grid">
+      <section className="panel task-control-hero">
         <div className="row between">
           <div>
             <h2>{task.title}</h2>
@@ -133,16 +170,6 @@ export function RequesterTaskDetail({ task, users, operatorId, onTaskChange, sho
           </div>
         </div>
         <p>{task.description}</p>
-        <div className="grid two">
-          <div className="item">
-            <strong>标注规则</strong>
-            <p className="muted">{task.rules}</p>
-          </div>
-          <div className="item">
-            <strong>培训说明</strong>
-            <p className="muted">{task.trainingContent}</p>
-          </div>
-        </div>
       </section>
 
       <section className="stats">
@@ -152,42 +179,22 @@ export function RequesterTaskDetail({ task, users, operatorId, onTaskChange, sho
         <Stat label="预计结算" value={money(stats.amount)} />
       </section>
 
-      {showCreationInfo ? (
-        <section className="panel grid">
-          <h2>创建任务信息</h2>
-          <div className="grid three">
-            <InfoItem label="任务 ID" value={task.id} />
-            <InfoItem label="创建者 ID" value={task.requesterId} />
-            <InfoItem label="创建时间" value={formatDate(task.createdAt)} />
-            <InfoItem label="更新时间" value={formatDate(task.updatedAt)} />
-            <InfoItem label="创建方式" value={creationModeLabels[task.creationMode]} />
-            <InfoItem label="历史任务" value={task.historyTaskId ?? "无"} />
-            <InfoItem label="任务进入方式" value={entryModeLabels[task.entryMode]} />
-            <InfoItem label="指定标注方" value={assignedAnnotator ? `${assignedAnnotator.name}（${assignedAnnotator.id}）` : task.assignedAnnotatorId ?? "不指定"} />
-            <InfoItem label="单价" value={money(task.quotedUnitPrice ?? task.manualUnitPrice ?? 0)} />
-            <InfoItem label="截止时间" value={formatDate(task.deadline)} />
-            <InfoItem label="试标抽取方式" value={task.trialSamplingMode ? samplingModeLabels[task.trialSamplingMode] : "不试标"} />
-            <InfoItem label="试标条数" value={task.trialSampleSize ?? task.trialItems.length} />
-            <InfoItem label="数据形态" value={imageDataModeLabels[task.displayConfig.imageDataMode]} />
-            <InfoItem label="多图展示方式" value={task.displayConfig.multiImageDisplayMode ? multiImageDisplayModeLabels[task.displayConfig.multiImageDisplayMode] : "无"} />
-            <InfoItem label="放大展示" value={task.displayConfig.enableDoubleClickZoom ? zoomDisplayModeLabels[task.displayConfig.zoomDisplayMode ?? "modal"] : "不支持"} />
-          </div>
-          <div className="grid">
-            {task.labelConfigs.map((config) => (
-              <div className="item" key={config.id}>
-                <div className="row between">
-                  <strong>{config.title}</strong>
-                  <span className="badge">{config.selectionMode === "single" ? "单选" : "多选"}</span>
-                </div>
-                <p className="muted">{config.options.map((option) => option.label).join("、")}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-      ) : null}
+      <section className="panel task-next-action">
+        <div>
+          <span className="badge">当前待处理</span>
+          <h2>{nextActionTitle}</h2>
+          <p className="muted">{nextActionText}</p>
+        </div>
+      </section>
 
-      <section className="panel">
-        <h2>报价对比</h2>
+      <details id="quote-section" className="panel task-detail-section" open={quoteTodoActive}>
+        <summary>
+          <span>
+            报价与试标审核
+            <small>选择正式标注方前处理</small>
+          </span>
+          <span className={`badge todo-badge ${quoteTodoActive ? "active" : ""}`}>{task.quotes.length} 份报价</span>
+        </summary>
         {task.quotes.length === 0 ? (
           <div className="empty">暂无报价，直接正式标注任务可跳过此区块。</div>
         ) : (
@@ -251,7 +258,7 @@ export function RequesterTaskDetail({ task, users, operatorId, onTaskChange, sho
                                 <strong>试标数据 {index + 1}</strong>
                                 <span className="badge">{item.id}</span>
                               </div>
-                              <ImageViewer imageUrls={item.imageUrls} displayConfig={task.displayConfig} />
+                              <ImageViewer imageUrls={item.imageUrls} sourceData={item.sourceData} displayConfig={task.displayConfig} />
                               <SourceDataMeta item={item} />
                               <AnnotationSummary task={task} item={{ ...item, annotationValues: quote.trialValues?.[item.id] ?? item.annotationValues }} />
                             </div>
@@ -265,11 +272,18 @@ export function RequesterTaskDetail({ task, users, operatorId, onTaskChange, sho
             </tbody>
           </table>
         )}
-      </section>
+      </details>
 
-      <section className="panel grid">
-        <div className="row between">
-          <h2>子任务包抽检</h2>
+      <details id="review-section" className="panel task-detail-section" open={canReviewPackages}>
+        <summary>
+          <span>
+            子任务包验收
+            <small>抽检、通过、驳回正式标注结果</small>
+          </span>
+          <span className={`badge todo-badge ${reviewTodoActive ? "active" : ""}`}>{pendingReviewPackages.length} 个待验收</span>
+        </summary>
+        <div className="row between task-section-toolbar">
+          <p className="muted">只在需要验收时展开，避免和任务配置混在一起。</p>
           <button
             className="primary"
             disabled={!task.packages.some((pkg) => pkg.status === "pending_review")}
@@ -384,7 +398,7 @@ export function RequesterTaskDetail({ task, users, operatorId, onTaskChange, sho
                       const draft = rejectDraft[item.id] ?? { issue: "label_error" as RejectionIssueType, reason: "" };
                       return (
                         <div className="item grid" key={item.id}>
-                          <ImageViewer imageUrls={item.imageUrls} displayConfig={task.displayConfig} />
+                          <ImageViewer imageUrls={item.imageUrls} sourceData={item.sourceData} displayConfig={task.displayConfig} />
                           <SourceDataMeta item={item} />
                           <AnnotationSummary task={task} item={item} />
                           <div className="row">
@@ -423,31 +437,92 @@ export function RequesterTaskDetail({ task, users, operatorId, onTaskChange, sho
             );
           })
         )}
-      </section>
+      </details>
 
-      <section className="panel grid">
-        <h2>申诉 / 质疑</h2>
-        {task.formalItems.filter((item) => item.reviewStatus === "appealed").length === 0 ? (
+      <details className="panel task-detail-section" open={appealTodoActive}>
+        <summary>
+          <span>
+            申诉 / 质疑
+            <small>处理标注方对驳回结果的反馈</small>
+          </span>
+          <span className={`badge todo-badge ${appealTodoActive ? "active" : ""}`}>{appealedItems.length} 条申诉</span>
+        </summary>
+        {appealedItems.length === 0 ? (
           <div className="empty">暂无申诉</div>
         ) : (
-          task.formalItems
-            .filter((item) => item.reviewStatus === "appealed")
-            .map((item) => (
-              <div className="item" key={item.id}>
-                <p>{item.appealReason}</p>
-                <div className="row">
-                  <button onClick={() => onTaskChange(handleAppeal(task, item.id, false, "维持驳回"))}>维持驳回</button>
-                  <button className="primary" onClick={() => onTaskChange(handleAppeal(task, item.id, true, "申诉通过"))}>
-                    改为通过
-                  </button>
-                </div>
+          appealedItems.map((item) => (
+            <div className="item" key={item.id}>
+              <p>{item.appealReason}</p>
+              <div className="row">
+                <button onClick={() => onTaskChange(handleAppeal(task, item.id, false, "维持驳回"))}>维持驳回</button>
+                <button className="primary" onClick={() => onTaskChange(handleAppeal(task, item.id, true, "申诉通过"))}>
+                  改为通过
+                </button>
               </div>
-            ))
+            </div>
+          ))
         )}
-      </section>
+      </details>
 
-      <section className="panel grid">
-        <h2>中止任务</h2>
+      {showCreationInfo ? (
+        <details className="panel task-detail-section task-config-section">
+          <summary>
+            <span>
+              任务配置与规则
+              <small>纯信息展示，默认收起，按需查看</small>
+            </span>
+            <span className="badge">{task.labelConfigs.length} 个问题组</span>
+          </summary>
+          <div className="grid three">
+            <InfoItem label="任务 ID" value={task.id} />
+            <InfoItem label="创建者 ID" value={task.requesterId} />
+            <InfoItem label="创建时间" value={formatDate(task.createdAt)} />
+            <InfoItem label="更新时间" value={formatDate(task.updatedAt)} />
+            <InfoItem label="创建方式" value={creationModeLabels[task.creationMode]} />
+            <InfoItem label="历史任务" value={task.historyTaskId ?? "无"} />
+            <InfoItem label="任务进入方式" value={entryModeLabels[task.entryMode]} />
+            <InfoItem label="指定标注方" value={assignedAnnotator ? `${assignedAnnotator.name}（${assignedAnnotator.id}）` : task.assignedAnnotatorId ?? "不指定"} />
+            <InfoItem label="单价" value={money(task.quotedUnitPrice ?? task.manualUnitPrice ?? 0)} />
+            <InfoItem label="截止时间" value={formatDate(task.deadline)} />
+            <InfoItem label="试标抽取方式" value={task.trialSamplingMode ? samplingModeLabels[task.trialSamplingMode] : "不试标"} />
+            <InfoItem label="试标条数" value={task.trialSampleSize ?? task.trialItems.length} />
+            <InfoItem label="展示布局" value={task.displayConfig.layoutMode === "custom" ? `自定义画布（${task.displayConfig.frames?.length ?? 0} 个框）` : "基础图片展示"} />
+            <InfoItem label="数据形态" value={imageDataModeLabels[task.displayConfig.imageDataMode]} />
+            <InfoItem label="多图展示方式" value={task.displayConfig.layoutMode === "custom" ? "按画布展示" : task.displayConfig.multiImageDisplayMode ? multiImageDisplayModeLabels[task.displayConfig.multiImageDisplayMode] : "无"} />
+            <InfoItem label="放大展示" value={task.displayConfig.layoutMode === "custom" ? "点击图片/视频全屏查看" : task.displayConfig.enableDoubleClickZoom ? zoomDisplayModeLabels[task.displayConfig.zoomDisplayMode ?? "modal"] : "不支持"} />
+          </div>
+          <div className="grid two">
+            <div className="item">
+              <strong>标注规则</strong>
+              <p className="muted">{task.rules}</p>
+            </div>
+            <div className="item">
+              <strong>培训说明</strong>
+              <p className="muted">{task.trainingContent}</p>
+            </div>
+          </div>
+          <div className="grid">
+            {task.labelConfigs.map((config) => (
+              <div className="item" key={config.id}>
+                <div className="row between">
+                  <strong>{config.title}</strong>
+                  <span className="badge">{config.selectionMode === "single" ? "单选" : "多选"}</span>
+                </div>
+                <p className="muted">{config.options.map((option) => option.label).join("、")}</p>
+              </div>
+            ))}
+          </div>
+        </details>
+      ) : null}
+
+      <details className="panel task-detail-section danger-zone">
+        <summary>
+          <span>
+            中止任务
+            <small>低频危险操作，默认收起</small>
+          </span>
+          {task.cancelReason ? <span className="badge danger">已中止</span> : null}
+        </summary>
         <div className="row">
           <input style={{ maxWidth: 420 }} placeholder="中止原因" value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} />
           <button className="danger" disabled={task.status === "completed" || task.status === "cancelled"} onClick={cancel}>
@@ -455,7 +530,7 @@ export function RequesterTaskDetail({ task, users, operatorId, onTaskChange, sho
           </button>
         </div>
         {task.cancelReason ? <p className="muted">中止原因：{task.cancelReason}</p> : null}
-      </section>
+      </details>
     </div>
   );
 }

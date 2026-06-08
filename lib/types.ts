@@ -26,12 +26,37 @@ export type TrialSamplingMode = "first_n" | "random_n";
 export type ImageDataMode = "single_image" | "multi_image";
 export type MultiImageDisplayMode = "parallel" | "carousel";
 export type ZoomDisplayMode = "modal" | "fullscreen";
+export type DisplayLayoutMode = "legacy" | "custom";
+export type DisplayFrameType = "image" | "video" | "text";
+export type DisplayFrameFit = "contain" | "cover";
+
+export type DisplayFrame = {
+  id: string;
+  type: DisplayFrameType;
+  label: string;
+  bindingKey: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  fit?: DisplayFrameFit;
+  allowFullscreen?: boolean;
+};
+
+export type DetailViewerConfig = {
+  enabled: boolean;
+  navigation: "same_type" | "all_media";
+};
 
 export type DisplayConfig = {
+  layoutMode?: DisplayLayoutMode;
   imageDataMode: ImageDataMode;
   multiImageDisplayMode?: MultiImageDisplayMode;
   enableDoubleClickZoom: boolean;
   zoomDisplayMode?: ZoomDisplayMode;
+  canvasRatio?: "16:9" | "4:3" | "1:1" | "free";
+  frames?: DisplayFrame[];
+  detailViewer?: DetailViewerConfig;
 };
 
 export type LabelSelectionMode = "single" | "multiple";

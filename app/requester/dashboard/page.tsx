@@ -1,9 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { RequesterShell } from "@/components/RequesterShell";
-import { RequesterTaskDetail } from "@/components/RequesterTaskDetail";
 import { ReviewBatchDialog } from "@/components/ReviewBatchDialog";
 import { statusBadgeClass, taskStatusLabels } from "@/lib/labels";
 import { getCurrentUser, getTasks, getUsers, saveTasks } from "@/lib/storage";
@@ -43,7 +42,6 @@ function isTaskFilter(value: string | null): value is TaskFilter {
 
 export default function RequesterDashboardPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [selectedId, setSelectedId] = useState("");
   const [filter, setFilter] = useState<TaskFilter>("attention");
   const [query, setQuery] = useState("");
   const [reviewTaskId, setReviewTaskId] = useState("");
@@ -57,7 +55,6 @@ export default function RequesterDashboardPage() {
     const createdTaskId = params.get("created") ?? "";
     const toastParam = params.get("toast") ?? "";
     setTasks(loaded);
-    setSelectedId("");
     if (isTaskFilter(filterParam)) setFilter(filterParam);
     if (createdTaskId) {
       setHighlightedTaskId(createdTaskId);
@@ -70,7 +67,6 @@ export default function RequesterDashboardPage() {
   const users = getUsers();
   const currentUser = getCurrentUser();
   const requesterTasks = tasks.filter((task) => task.requesterId === currentUser.id);
-  const selected = requesterTasks.find((task) => task.id === selectedId);
   const reviewTask = requesterTasks.find((task) => task.id === reviewTaskId);
 
   const totals = useMemo(() => {
@@ -178,10 +174,6 @@ export default function RequesterDashboardPage() {
     URL.revokeObjectURL(url);
   }
 
-  function toggleTaskDetail(taskId: string) {
-    setSelectedId((current) => (current === taskId ? "" : taskId));
-  }
-
   function focusTaskList(nextFilter: TaskFilter) {
     setFilter(nextFilter);
     window.setTimeout(() => {
@@ -270,24 +262,12 @@ export default function RequesterDashboardPage() {
                 {filteredTasks.map((task, index) => {
                   const annotator = users.find((user) => user.id === task.selectedAnnotatorId || user.id === task.assignedAnnotatorId)?.name ?? "-";
                   const rowClassName = [
-                    task.id === selected?.id ? "active" : "",
                     task.id === highlightedTaskId ? "created-highlight" : ""
                   ].filter(Boolean).join(" ");
                   return (
-                    <Fragment key={task.id}>
-                      <tr id={`task-row-${task.id}`} className={rowClassName} onClick={() => toggleTaskDetail(task.id)}>
+                      <tr key={task.id} id={`task-row-${task.id}`} className={rowClassName}>
                         <td className="market-task-id">任务编号 R-{String(index + 1).padStart(3, "0")}</td>
                         <td>
-                          <button
-                            className="row-toggle"
-                            aria-expanded={task.id === selected?.id}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              toggleTaskDetail(task.id);
-                            }}
-                          >
-                            {task.id === selected?.id ? "收起" : "展开"}
-                          </button>
                           <strong>{task.title}</strong>
                           <div className="muted">正式数据 {task.formalItems.length} 条 · 截止 {formatDate(task.deadline)}</div>
                         </td>
@@ -331,19 +311,6 @@ export default function RequesterDashboardPage() {
                           </div>
                         </td>
                       </tr>
-                      {task.id === selected?.id ? (
-                        <tr className="embedded-detail-row">
-                          <td colSpan={6}>
-                            <RequesterTaskDetail
-                              task={task}
-                              users={users}
-                              operatorId={currentUser.id}
-                              onTaskChange={persist}
-                            />
-                          </td>
-                        </tr>
-                      ) : null}
-                    </Fragment>
                   );
                 })}
                 {filteredTasks.length === 0 ? (

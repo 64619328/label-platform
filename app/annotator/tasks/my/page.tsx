@@ -6,6 +6,7 @@ import { AnnotatorShell } from "@/components/AnnotatorShell";
 import { PackageBadge } from "@/components/TaskMeta";
 import { statusBadgeClass, taskStatusLabels } from "@/lib/labels";
 import { getCurrentUser, getTasks } from "@/lib/storage";
+import { taskCoverImage } from "@/lib/task-cover";
 import { taskStats } from "@/lib/task-actions";
 import type { Task } from "@/lib/types";
 import { formatDate, money } from "@/lib/utils";
@@ -60,7 +61,7 @@ export default function MyAnnotatorTasksPage() {
                   : 0;
                 const canWork = task.selectedAnnotatorId === currentUser.id && task.status !== "cancelled";
                 const quote = task.quotes.find((item) => item.annotatorId === currentUser.id);
-                const imageUrl = task.formalItems[0]?.imageUrls[0] ?? task.trialItems[0]?.imageUrls[0];
+                const imageUrl = taskCoverImage(task, "formal");
 
                 return (
                   <article className="my-task-row" key={task.id}>
